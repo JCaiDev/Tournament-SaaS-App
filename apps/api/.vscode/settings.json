@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "npx dotenv": true,
+        "docker compose": true,
+        "open": true,
+        "brew": true
+    }
+}

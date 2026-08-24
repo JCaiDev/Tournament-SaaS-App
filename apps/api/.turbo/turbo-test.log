@@ -1,0 +1,270 @@
+
+
+> @my-app/api@1.0.0 test
+> dotenv -e .env.test -- jest --runInBand --detectOpenHandles --forceExit
+
+[1G[0K[1m[2mDetermining test suites to run...[22m[22m[?2026h[999D[K
+[?2026l[?2026h[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m ([0m[1m[41m8.012 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mConsole
+
+    [2mconsole.log[22m
+      Email worker started...
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/workers/email.worker.ts[2m:51:9)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/lobby/[22m[1mlobby.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mConsole
+
+    [2mconsole.log[22m
+      Email worker started...
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/workers/email.worker.ts[2m:51:9)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.update.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/user/[22m[1muser.create.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mConsole
+
+    [2mconsole.log[22m
+      Email worker started...
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/workers/email.worker.ts[2m:51:9)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mConsole
+
+    [2mconsole.log[22m
+      Email worker started...
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/workers/email.worker.ts[2m:51:9)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.login.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/user/[22m[1muser.create.int.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mConsole
+
+    [2mconsole.log[22m
+      Email worker started...
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/workers/email.worker.ts[2m:51:9)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.create.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.refresh.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2mtests/auth/[22m[1mauth.refresh.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.refresh.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mTest suite failed to run
+
+    [96mtests/auth/auth.refresh.test.ts[0m:[93m17[0m:[93m10[0m - [91merror[0m[90m TS2339: [0mProperty 'skip' does not exist on type '(description: string, specDefinitions: () => void) => void'.
+
+    [7m17[0m describe.skip('POST /auth/refresh', () => {
+    [7m  [0m [91m         ~~~~[0m
+    [96mtests/auth/auth.refresh.test.ts[0m:[93m37[0m:[93m26[0m - [91merror[0m[90m TS2339: [0mProperty 'toHaveProperty' does not exist on type 'FunctionMatchers<any>'.
+
+    [7m37[0m         expect(res.body).toHaveProperty('accessToken');
+    [7m  [0m [91m                         ~~~~~~~~~~~~~~[0m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.refresh.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.delete.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.delete.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.delete.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.delete.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.delete.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.delete.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/user/[22m[1muser.delete.int.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.delete.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mConsole
+
+    [2mconsole.log[22m
+      Email worker started...
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/workers/email.worker.ts[2m:51:9)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.delete.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/user/[22m[1muser.get.api.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mConsole
+
+    [2mconsole.log[22m
+      Email worker started...
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/workers/email.worker.ts[2m:51:9)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.api.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/user/[22m[1muser.get.int.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mConsole
+
+    [2mconsole.log[22m
+      Email worker started...
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2msrc/workers/email.worker.ts[2m:51:9)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/user/[22m[1muser.get.int.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.register.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2mtests/auth/[22m[1mauth.register.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.register.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A  [1m● [22mTest suite failed to run
+
+    [96mtests/auth/auth.register.test.ts[0m:[93m10[0m:[93m10[0m - [91merror[0m[90m TS2339: [0mProperty 'skip' does not exist on type '(description: string, specDefinitions: () => void) => void'.
+
+    [7m10[0m describe.skip('POST /auth/register', () => {
+    [7m  [0m [91m         ~~~~[0m
+    [96mtests/auth/auth.register.test.ts[0m:[93m22[0m:[93m35[0m - [91merror[0m[90m TS2339: [0mProperty 'toHaveProperty' does not exist on type 'FunctionMatchers<any>'.
+
+    [7m22[0m         expect(res.body.user).not.toHaveProperty('password')
+    [7m  [0m [91m                                  ~~~~~~~~~~~~~~[0m
+    [96mtests/auth/auth.register.test.ts[0m:[93m23[0m:[93m35[0m - [91merror[0m[90m TS2339: [0mProperty 'toHaveProperty' does not exist on type 'FunctionMatchers<any>'.
+
+    [7m23[0m         expect(res.body.user).not.toHaveProperty('passwordHash')
+    [7m  [0m [91m                                  ~~~~~~~~~~~~~~[0m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/auth/[22m[1mauth.register.test.ts[22m
+[?2026l[?2026h[K[1A[K[1A[?2026l[999D[K[1mTest Suites: [22m[1m[31m2 failed[39m[22m, [1m[32m9 passed[39m[22m, 11 total
+[1mTests:       [22m[1m[32m31 passed[39m[22m, 31 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        14.558 s
+[2mRan all test suites[22m[2m.[22m
+[?2026h[?2026l[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `test` failed with error:
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m1[39m
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/jcai/Desktop/Tools/my-app/apps/api
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m @my-app/api@1.0.0
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/jcai/Desktop/Tools/my-app/apps/api
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c dotenv -e .env.test -- jest --runInBand --detectOpenHandles --forceExit
+[1G[0K⠙[1G[0K

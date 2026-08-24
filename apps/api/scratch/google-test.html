@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Google ID Token Tester</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 720px;
+            margin: 40px auto;
+            padding: 0 16px;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+        }
+
+        #token {
+            width: 100%;
+            height: 180px;
+            margin-top: 12px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        button {
+            margin-top: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .hint {
+            color: #555;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Google ID Token Tester</h1>
+    <p class="hint">
+        Sign in with Google below. The resulting <code>id_token</code> appears in the box.
+        Copy it and send it as <code>{ "idToken": "..." }</code> to <code>POST /auth/google</code>.
+    </p>
+
+    <!-- Google renders the sign-in button into this div -->
+    <div id="g_id_onload" data-client_id='632039701652-478v5m9fu3l48eq4gvs3n0n64j2is7e3.apps.googleusercontent.com'
+        data-callback="handleCredential" data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with"
+        data-shape="rectangular" data-logo_alignment="left">
+    </div>
+
+    <textarea id="token" readonly placeholder="Your id_token will appear here after sign-in..."></textarea>
+    <br />
+    <button onclick="copyToken()">Copy token</button>
+
+    <script>
+        function handleCredential(response) {
+            // response.credential is the Google ID token (a JWT)
+            document.getElementById('token').value = response.credential;
+            console.log('id_token:', response.credential);
+        }
+
+        function copyToken() {
+            const box = document.getElementById('token');
+            box.select();
+            navigator.clipboard.writeText(box.value);
+        }
+    </script>
+</body>
+
+</html>
