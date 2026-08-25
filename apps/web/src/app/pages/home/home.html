@@ -1,0 +1,84 @@
+<section class="hero">
+  <div class="container hero-inner">
+    <span class="hero-eyebrow">Pickup volleyball, organized</span>
+    <h1 class="hero-title">Find an active game near you</h1>
+    <p class="hero-sub">
+      Browse open lobbies hosted by the community. Tap any game to see the
+      details and how to join.
+    </p>
+  </div>
+</section>
+
+<section class="container listing">
+  <div class="listing-head">
+    <h2>Active lobbies</h2>
+    @if (!loading() && !error()) {
+      <span class="count">{{ lobbies().length }} open</span>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="grid">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="card skeleton"></div>
+      }
+    </div>
+  } @else if (error()) {
+    <div class="state state-error">
+      <p>{{ error() }}</p>
+      <button type="button" class="btn btn-primary" (click)="loadLobbies()">
+        Try again
+      </button>
+    </div>
+  } @else if (lobbies().length === 0) {
+    <div class="state">
+      <p>No active lobbies right now. Check back soon!</p>
+    </div>
+  } @else {
+    <div class="grid">
+      @for (lobby of lobbies(); track lobby.id) {
+        <a class="card lobby-card" [routerLink]="['/lobbies', lobby.id]">
+          <div class="card-top">
+            <h3 class="lobby-name">{{ lobby.lobbyName }}</h3>
+            <span class="price">
+              @if (lobby.price > 0) {
+                {{ lobby.price | currency: 'CAD' : 'symbol' : '1.0-2' }}
+              } @else {
+                Free
+              }
+            </span>
+          </div>
+
+          <p class="location">{{ lobby.location }}</p>
+
+          <p class="time">
+            {{ lobby.startTime | date: 'EEE, MMM d · h:mm a' }}
+          </p>
+
+          <div class="badges">
+            <span class="badge badge-skill">{{ skillLabel(lobby) }}</span>
+            <span class="badge badge-gender">{{ genderLabel(lobby) }}</span>
+            @if (lobby.allowToApply) {
+              <span class="badge badge-open">Accepting players</span>
+            }
+          </div>
+
+          <div class="host">
+            @if (lobby.host.pictureUrl) {
+              <img
+                class="host-avatar"
+                [src]="lobby.host.pictureUrl"
+                [alt]="lobby.host.name"
+              />
+            } @else {
+              <span class="host-avatar host-avatar-fallback">
+                {{ lobby.host.name.charAt(0) }}
+              </span>
+            }
+            <span class="host-name">Hosted by {{ lobby.host.name }}</span>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</section>

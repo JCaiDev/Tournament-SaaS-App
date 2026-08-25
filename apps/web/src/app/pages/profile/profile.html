@@ -1,0 +1,144 @@
+<section class="container profile">
+  @if (user(); as u) {
+    <header class="profile-head">
+      @if (u.pictureUrl) {
+        <img class="avatar" [src]="u.pictureUrl" [alt]="u.name" />
+      } @else {
+        <span class="avatar avatar-fallback">{{ initial() }}</span>
+      }
+      <div>
+        <h1>{{ u.name }}</h1>
+        <span class="role-badge">{{ u.role }}</span>
+      </div>
+    </header>
+
+    @if (saved()) {
+      <div class="notice notice-success" role="status">Profile updated.</div>
+    }
+    @if (serverError()) {
+      <div class="notice notice-error" role="alert">{{ serverError() }}</div>
+    }
+
+    @if (!editing()) {
+      <dl class="facts">
+        <div class="fact">
+          <dt>Email</dt>
+          <dd>{{ u.email }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Date of birth</dt>
+          <dd>{{ u.birthDate ? (u.birthDate | date: 'longDate') : '—' }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Member since</dt>
+          <dd>{{ u.createdAt | date: 'longDate' }}</dd>
+        </div>
+      </dl>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" (click)="startEdit()">
+          Edit profile
+        </button>
+      </div>
+    } @else {
+      <form class="edit-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <div class="field">
+          <label for="name">Full name</label>
+          <input id="name" type="text" class="input" formControlName="name" />
+          @if (form.controls.name.touched && form.controls.name.invalid) {
+            <p class="field-error">Please enter your name.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" class="input" formControlName="email" />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <p class="field-error">Enter a valid email address.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="birthDate">Date of birth</label>
+          <input
+            id="birthDate"
+            type="date"
+            class="input"
+            formControlName="birthDate"
+          />
+        </div>
+
+        <div class="field">
+          <label for="password">New password <span class="muted">(optional)</span></label>
+          <div class="password-wrap">
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              class="input"
+              formControlName="password"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="toggle"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              {{ showPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          @if (form.controls.password.touched && passwordRules) {
+            <ul class="rules">
+              <li [class.ok]="passwordRules.minLength">At least 8 characters</li>
+              <li [class.ok]="passwordRules.upper">One uppercase letter</li>
+              <li [class.ok]="passwordRules.lower">One lowercase letter</li>
+              <li [class.ok]="passwordRules.number">One number</li>
+              <li [class.ok]="passwordRules.special">One special character</li>
+            </ul>
+          }
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save changes' }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="cancelEdit()">
+            Cancel
+          </button>
+        </div>
+      </form>
+    }
+
+    <div class="danger-zone">
+      <h2>Danger zone</h2>
+      @if (!confirmingDelete()) {
+        <button
+          type="button"
+          class="btn btn-danger"
+          (click)="confirmingDelete.set(true)"
+        >
+          Delete my account
+        </button>
+      } @else {
+        <p>This will permanently remove your account. Are you sure?</p>
+        <div class="actions">
+          <button
+            type="button"
+            class="btn btn-danger"
+            (click)="deleteAccount()"
+            [disabled]="deleting()"
+          >
+            {{ deleting() ? 'Deleting…' : 'Yes, delete my account' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost"
+            (click)="confirmingDelete.set(false)"
+          >
+            Keep my account
+          </button>
+        </div>
+      }
+    </div>
+  }
+</section>

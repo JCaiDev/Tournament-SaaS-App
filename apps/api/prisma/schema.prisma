@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  HOST
+  PLAYER
+}
+
+enum SkillLevel {
+  OPEN
+  INTERMEDIATE
+  INTERMEDIATE_PLUS
+}
+
+enum GenderFormat {
+  MENS
+  WOMENS
+  COED
+}
+
+// --- The People ---
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String?
+  name         String
+  birthDate    DateTime?     @db.Date
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+  role         Role          @default(PLAYER)
+  lobbies      Lobby[]       @relation("HostedLobbies")
+  googleSub    String?       @unique
+  pictureUrl   String?
+  lobbyPlayers LobbyPlayer[]
+}
+
+// --- The Games ---
+model Lobby {
+  id           String        @id @default(uuid())
+  lobbyName    String
+  location     String
+  startTime    DateTime
+  endTime      DateTime
+  price        Float
+  skillLevel   SkillLevel
+  genderFormat GenderFormat
+  allowToApply Boolean
+  createdAt    DateTime      @default(now())
+  hostId       String
+  host         User          @relation("HostedLobbies", fields: [hostId], references: [id])
+  players      LobbyPlayer[]
+}
+
+model LobbyPlayer {
+  id        String   @id @default(uuid())
+  lobbyId   String
+  userId    String?
+  guestName String?
+  position  String   @default("")
+  approved  Boolean  @default(false)
+  paid      Boolean  @default(false)
+  joinedAt  DateTime @default(now())
+
+  lobby     Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@unique([lobbyId, userId])
+  @@index([lobbyId])
+}

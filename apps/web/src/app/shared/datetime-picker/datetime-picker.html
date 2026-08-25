@@ -1,0 +1,31 @@
+<div class="dt-field" [class.dt-disabled]="disabled()">
+  <div class="dt-part dt-date-part">
+    <span class="dt-icon" aria-hidden="true">📅</span>
+    <input
+      type="date"
+      class="dt-input"
+      [value]="date()"
+      [disabled]="disabled()"
+      (input)="onDateInput($any($event.target).value)"
+      (blur)="markTouched()"
+      aria-label="Date"
+    />
+  </div>
+
+  <div class="dt-part dt-time-part">
+    <span class="dt-icon" aria-hidden="true">🕒</span>
+    <select
+      class="dt-input dt-select"
+      [value]="time()"
+      [disabled]="disabled()"
+      (change)="onTimeInput($any($event.target).value)"
+      (blur)="markTouched()"
+      aria-label="Time"
+    >
+      <option value="" disabled>Select time</option>
+      @for (opt of timeOptions(); track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+  </div>
+</div>

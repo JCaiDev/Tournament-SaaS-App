@@ -1,0 +1,42 @@
+<header class="site-header">
+  <div class="container header-inner">
+    <a routerLink="/" class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">Volleyball<strong>Lobbies</strong></span>
+    </a>
+    <nav class="site-nav">
+      <a routerLink="/" class="nav-link">Active Lobbies</a>
+      @if (isLoggedIn()) {
+        @if (user()?.role === 'HOST' || user()?.role === 'ADMIN') {
+        <a routerLink="/lobbies/new" class="nav-btn nav-btn-cta">Host a game</a>
+}
+        <a routerLink="/profile" class="nav-user">
+          @if (user()?.pictureUrl) {
+            <img class="nav-avatar" [src]="user()!.pictureUrl" [alt]="user()!.name" />
+          } @else {
+            <span class="nav-avatar nav-avatar-fallback">
+              {{ (user()?.name || '?').charAt(0) }}
+            </span>
+          }
+          <span class="nav-name">{{ user()?.name }}</span>
+        </a>
+        <button type="button" class="nav-btn nav-btn-ghost" (click)="logout()">
+          Log out
+        </button>
+      } @else {
+        <a routerLink="/login" class="nav-link">Login</a>
+        <a routerLink="/signup" class="nav-btn nav-btn-cta">Sign up</a>
+      }
+    </nav>
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>Volleyball Lobbies · find a game near you</span>
+  </div>
+</footer>

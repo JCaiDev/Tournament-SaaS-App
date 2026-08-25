@@ -1,0 +1,572 @@
+<section class="container detail">
+  <a routerLink="/" class="back-link">← Back to lobbies</a>
+
+  @if (loading()) {
+    <div class="panel skeleton"></div>
+  } @else if (notFound()) {
+    <div class="state">
+      <h2>Lobby not found</h2>
+      <p>This game may have ended or the link is incorrect.</p>
+      <a routerLink="/" class="btn btn-primary">Browse active lobbies</a>
+    </div>
+  } @else if (error()) {
+    <div class="state state-error">
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (lobby(); as l) {
+    <article class="panel">
+      <header class="detail-head">
+        <div>
+          <h1>{{ l.lobbyName }}</h1>
+          <p class="location">{{ l.location }}</p>
+        </div>
+        <span class="price">
+          @if (l.price > 0) {
+            {{ l.price | currency: 'CAD' : 'symbol' : '1.0-2' }}
+          } @else {
+            Free
+          }
+        </span>
+      </header>
+
+      <div class="badges">
+        <span class="badge badge-skill">{{ skillLabel }}</span>
+        <span class="badge badge-gender">{{ genderLabel }}</span>
+        @if (l.allowToApply) {
+          <span class="badge badge-open">Accepting players</span>
+        }
+      </div>
+
+      <dl class="facts">
+        <div class="fact">
+          <dt>Starts</dt>
+          <dd>{{ l.startTime | date: 'EEEE, MMM d · h:mm a' }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Ends</dt>
+          <dd>{{ l.endTime | date: 'EEEE, MMM d · h:mm a' }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Skill level</dt>
+          <dd>{{ skillLabel }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Format</dt>
+          <dd>{{ genderLabel }}</dd>
+        </div>
+      </dl>
+
+      <footer class="host-block">
+        @if (l.host.pictureUrl) {
+          <img
+            class="host-avatar"
+            [src]="l.host.pictureUrl"
+            [alt]="l.host.name"
+          />
+        } @else {
+          <span class="host-avatar host-avatar-fallback">
+            {{ l.host.name.charAt(0) }}
+          </span>
+        }
+        <div>
+          <span class="host-label">Host</span>
+          <span class="host-name">{{ l.host.name }}</span>
+        </div>
+      </footer>
+      <footer class="action-bar">
+        @if (canDelete()) {
+          <a [routerLink]="['/lobbies', lobby()?.id, 'edit']" class="btn btn-primary">Edit</a>
+          <button type="button" class="btn btn-danger" (click)="deleteLobby()" [disabled]="deleting()">
+            {{deleting() ? 'Deleting...' : "Delete Lobby"}}
+          </button>
+          @if (deleteError()) { <p class="field-error"> {{ deleteError() }}</p> }
+        }
+      </footer>
+
+      @if (promotedName()) {
+        <div class="toast" role="status">
+          ↑ {{ promotedName() }} was promoted from the waitlist.
+        </div>
+      }
+
+      @if (canManage()) {
+        <section class="host-tools">
+          <div class="host-tools-head">
+            <h2 class="section-title">Host tools</h2>
+            @if (hostActionError()) { <p class="field-error">{{ hostActionError() }}</p> }
+          </div>
+
+          <div class="tool-grid">
+            <div class="tool">
+              <span class="tool-label">Roster cap</span>
+              @if (cap()) {
+                <div class="stepper">
+                  <button
+                    type="button"
+                    class="step-btn"
+                    (click)="lowerCap()"
+                    [disabled]="capacitySaving() || (cap() ?? 0) <= 1"
+                    aria-label="Decrease roster cap"
+                  >−</button>
+                  <span class="stepper-value">{{ cap() }}</span>
+                  <button
+                    type="button"
+                    class="step-btn"
+                    (click)="raiseCap()"
+                    [disabled]="capacitySaving()"
+                    aria-label="Increase roster cap"
+                  >+</button>
+                </div>
+                <button type="button" class="link-btn" (click)="clearCap()" [disabled]="capacitySaving()">
+                  Make unlimited
+                </button>
+              } @else {
+                <span class="tool-value">Unlimited</span>
+                <button type="button" class="link-btn" (click)="setCap()" [disabled]="capacitySaving()">
+                  Set a cap
+                </button>
+              }
+            </div>
+
+            <div class="tool">
+              <span class="tool-label">Registration</span>
+              <button
+                type="button"
+                class="toggle"
+                [class.toggle-on]="lobby()?.allowToApply"
+                (click)="toggleAccepting()"
+                [disabled]="acceptingSaving()"
+              >
+                <span class="toggle-dot"></span>
+                {{ lobby()?.allowToApply ? 'Open' : 'Closed' }}
+              </button>
+            </div>
+
+            <div class="tool">
+              <span class="tool-label">Invite</span>
+              <button type="button" class="btn btn-ghost" (click)="copyInvite()">
+                {{ copied() ? '✓ Link copied' : 'Copy invite link' }}
+              </button>
+            </div>
+          </div>
+        </section>
+      }
+
+      <section class="roster">
+        <div class="summary">
+          <div class="summary-card">
+            <span class="summary-value">
+              {{ spotsFilled() }}@if (cap()) {<span class="summary-sub">/{{ cap() }}</span>}
+            </span>
+            <span class="summary-label">{{ cap() ? 'Spots filled' : 'Players' }}</span>
+            @if (cap()) {
+              <div class="meter"><span class="meter-fill" [style.width.%]="fillPct()"></span></div>
+            }
+          </div>
+
+          @if (waitlistPlayers().length > 0) {
+            <div class="summary-card">
+              <span class="summary-value">{{ waitlistPlayers().length }}</span>
+              <span class="summary-label">On waitlist</span>
+            </div>
+          }
+
+          @if ((lobby()?.price ?? 0) > 0) {
+            <div class="summary-card">
+              <span class="summary-value">
+                {{ amountCollected() | currency: 'CAD' : 'symbol' : '1.0-2' }}
+              </span>
+              <span class="summary-label">{{ paidCount() }}/{{ players().length }} paid</span>
+            </div>
+          }
+        </div>
+
+        @if (playersLoading()) {
+          <p class="roster-muted">Loading players…</p>
+        } @else {
+          @if (playersError()) { <p class="field-error">{{ playersError() }}</p> }
+
+          <h3 class="section-title">
+            On the roster
+            @if (isFull()) { <span class="pill pill-full">Full</span> }
+          </h3>
+
+          @if (rosterPlayers().length === 0) {
+            <p class="roster-muted">
+              No players yet.@if (canManage()) { Add the first one below.}
+            </p>
+          } @else {
+            <ul class="player-list">
+              @for (p of rosterPlayers(); track p.id; let i = $index) {
+                <ng-container
+                  *ngTemplateOutlet="playerRow; context: { $implicit: p, seed: '' + (i + 1) }"
+                ></ng-container>
+              }
+            </ul>
+          }
+
+          @if (waitlistPlayers().length > 0) {
+            <h3 class="section-title">
+              Waitlist
+              <span class="pill">next up first</span>
+            </h3>
+            <ul class="player-list waitlist">
+              @for (p of waitlistPlayers(); track p.id; let i = $index) {
+                <ng-container
+                  *ngTemplateOutlet="playerRow; context: { $implicit: p, seed: 'W' + (i + 1) }"
+                ></ng-container>
+              }
+            </ul>
+          }
+
+          @if (canManage()) {
+            <form class="add-player" [formGroup]="addForm" (ngSubmit)="addPlayer()">
+              <div class="add-fields">
+                <label class="add-field">
+                  <span>Player name</span>
+                  <input #guestNameInput type="text" formControlName="guestName" placeholder="e.g. Alex Chen" />
+                </label>
+                <label class="add-field">
+                  <span>Position (optional)</span>
+                  <input type="text" formControlName="position" placeholder="e.g. Setter" />
+                </label>
+                <button type="submit" class="btn btn-primary" [disabled]="adding()">
+                  {{ adding() ? 'Adding…' : 'Add player' }}
+                </button>
+              </div>
+              @if (isFull() && !addError()) {
+                <p class="field-hint">Roster is full — new players join the waitlist.</p>
+              }
+              @if (addError()) { <p class="field-error">{{ addError() }}</p> }
+            </form>
+          }
+        }
+      </section>
+
+      @if (canManage() && !playersLoading() && rosterPlayers().length > 0) {
+        <section class="team-maker">
+          <div class="tm-head">
+            <h3 class="section-title">Team maker</h3>
+            <div class="tm-controls">
+              <div class="stepper">
+                <button
+                  type="button"
+                  class="step-btn"
+                  (click)="lowerTeams()"
+                  [disabled]="teamCount() <= 2"
+                  aria-label="Fewer teams"
+                >−</button>
+                <span class="stepper-value">{{ teamCount() }}</span>
+                <span class="stepper-suffix">teams</span>
+                <button
+                  type="button"
+                  class="step-btn"
+                  (click)="raiseTeams()"
+                  [disabled]="teamCount() >= rosterPlayers().length"
+                  aria-label="More teams"
+                >+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="tm-actions">
+            <button type="button" class="btn btn-primary" (click)="generateTeams()">
+              {{ placedCount() ? 'Reshuffle' : 'Auto-generate teams' }}
+            </button>
+            @if (placedCount()) {
+              <button type="button" class="btn btn-ghost" (click)="clearTeams()">Clear all</button>
+            }
+          </div>
+
+          <p class="field-hint">
+            Auto-generate balanced teams, then fine-tune — use a player’s menu to move them, or × to bench them.
+          </p>
+
+          <div class="team-grid">
+            <div class="team-card team-card-bench">
+              <div class="team-card-head">
+                <span class="team-name">Bench</span>
+                <span class="team-count">{{ unassignedPlayers().length }}</span>
+              </div>
+              <ul class="assign-list">
+                @for (p of unassignedPlayers(); track p.id) {
+                  <li class="assign-row">
+                    <div class="assign-id">
+                      <span class="team-player-name">{{ playerName(p) }}</span>
+                      @if (p.position) { <span class="team-player-pos">{{ p.position }}</span> }
+                    </div>
+                    <select
+                      class="assign-select"
+                      (change)="assignPlayer(p.id, +$any($event.target).value)"
+                      [attr.aria-label]="'Assign ' + playerName(p)"
+                    >
+                      <option [value]="-1" selected>Bench</option>
+                      @for (t of manualTeams(); track $index) {
+                        <option [value]="$index">{{ teamName($index) }}</option>
+                      }
+                    </select>
+                  </li>
+                } @empty {
+                  <li class="assign-empty">Everyone’s on a team 🎉</li>
+                }
+              </ul>
+            </div>
+
+            @for (team of manualTeams(); track $index; let teamIndex = $index) {
+              <div class="team-card">
+                <div class="team-card-head">
+                  <input
+                    class="team-name-input"
+                    [value]="teamName(teamIndex)"
+                    (change)="renameTeam(teamIndex, $any($event.target).value)"
+                    [attr.aria-label]="'Rename ' + teamName(teamIndex)"
+                  />
+                  <span class="team-count">{{ team.length }}</span>
+                </div>
+                <ul class="assign-list">
+                  @for (p of team; track p.id) {
+                    <li class="assign-row">
+                      <div class="assign-id">
+                        <span class="team-player-name">{{ playerName(p) }}</span>
+                        @if (p.position) { <span class="team-player-pos">{{ p.position }}</span> }
+                      </div>
+                      <select
+                        class="assign-select"
+                        (change)="assignPlayer(p.id, +$any($event.target).value)"
+                        [attr.aria-label]="'Move ' + playerName(p)"
+                      >
+                        <option [value]="-1">Bench</option>
+                        @for (t of manualTeams(); track $index) {
+                          <option [value]="$index" [selected]="$index === teamIndex">{{ teamName($index) }}</option>
+                        }
+                      </select>
+                      <button
+                        type="button"
+                        class="assign-remove"
+                        (click)="assignPlayer(p.id, -1)"
+                        [attr.aria-label]="'Bench ' + playerName(p)"
+                      >×</button>
+                    </li>
+                  } @empty {
+                    <li class="assign-empty">No players yet.</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+
+          @if (manualTeams().length > 0) {
+            <div class="pool-maker">
+              <div class="tm-head">
+                <h4 class="section-title">Pools</h4>
+                <div class="tm-controls">
+                  <div class="stepper">
+                    <button
+                      type="button"
+                      class="step-btn"
+                      (click)="lowerPools()"
+                      [disabled]="poolCount() <= 2"
+                      aria-label="Fewer pools"
+                    >−</button>
+                    <span class="stepper-value">{{ poolCount() }}</span>
+                    <span class="stepper-suffix">pools</span>
+                    <button
+                      type="button"
+                      class="step-btn"
+                      (click)="raisePools()"
+                      [disabled]="poolCount() >= teamCount()"
+                      aria-label="More pools"
+                    >+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tm-actions">
+                <button type="button" class="btn btn-primary" (click)="generatePools()">
+                  {{ pooledTeamCount() ? 'Reshuffle pools' : 'Auto-generate pools' }}
+                </button>
+                @if (pooledTeamCount()) {
+                  <button type="button" class="btn btn-ghost" (click)="clearPools()">Clear pools</button>
+                }
+              </div>
+
+              <p class="field-hint">
+                Auto-place teams into pools, then fine-tune — use a team’s menu to move it to another pool.
+              </p>
+
+              <div class="team-grid">
+                <div class="team-card team-card-bench">
+                  <div class="team-card-head">
+                    <span class="team-name">Unassigned</span>
+                    <span class="team-count">{{ unassignedTeams().length }}</span>
+                  </div>
+                  <ul class="assign-list">
+                    @for (t of unassignedTeams(); track t) {
+                      <li class="assign-row">
+                        <div class="assign-id">
+                          <span class="team-player-name">{{ teamName(t) }}</span>
+                        </div>
+                        <select
+                          class="assign-select"
+                          (change)="assignTeamToPool(t, +$any($event.target).value)"
+                          [attr.aria-label]="'Assign ' + teamName(t)"
+                        >
+                          <option [value]="-1" selected>Unassigned</option>
+                          @for (pool of pools(); track $index) {
+                            <option [value]="$index">{{ poolLabel($index) }}</option>
+                          }
+                        </select>
+                      </li>
+                    } @empty {
+                      <li class="assign-empty">All teams assigned 🎉</li>
+                    }
+                  </ul>
+                </div>
+
+                @for (pool of pools(); track $index; let poolIndex = $index) {
+                  <div class="team-card">
+                    <div class="team-card-head">
+                      <span class="team-name">{{ poolLabel(poolIndex) }}</span>
+                      <span class="team-count">{{ pool.length }}</span>
+                    </div>
+                    <ul class="assign-list">
+                      @for (t of pool; track t) {
+                        <li class="assign-row">
+                          <div class="assign-id">
+                            <span class="team-player-name">{{ teamName(t) }}</span>
+                          </div>
+                          <select
+                            class="assign-select"
+                            (change)="assignTeamToPool(t, +$any($event.target).value)"
+                            [attr.aria-label]="'Move ' + teamName(t)"
+                          >
+                            <option [value]="-1">Unassigned</option>
+                            @for (p of pools(); track $index) {
+                              <option [value]="$index" [selected]="$index === poolIndex">{{ poolLabel($index) }}</option>
+                            }
+                          </select>
+                        </li>
+                      } @empty {
+                        <li class="assign-empty">No teams yet.</li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </section>
+      }
+
+      <ng-template #playerRow let-p let-seed="seed">
+        <li class="player-row">
+          <span class="player-seed">{{ seed }}</span>
+
+          @if (editingId() === p.id) {
+            <form class="player-edit" [formGroup]="editForm" (ngSubmit)="saveEdit(p)">
+              @if (!p.user) {
+                <label class="edit-field">
+                  <span>Name</span>
+                  <input type="text" formControlName="guestName" placeholder="Player name" />
+                </label>
+              }
+              <label class="edit-field">
+                <span>Position</span>
+                <input type="text" formControlName="position" placeholder="e.g. Setter" />
+              </label>
+              <div class="edit-actions">
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  [disabled]="savingId() === p.id"
+                >
+                  {{ savingId() === p.id ? 'Saving…' : 'Save' }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost"
+                  (click)="cancelEdit()"
+                  [disabled]="savingId() === p.id"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          } @else {
+            <div class="player-id">
+              @if (p.user?.pictureUrl) {
+                <img class="player-avatar" [src]="p.user!.pictureUrl" [alt]="playerName(p)" />
+              } @else {
+                <span class="player-avatar player-avatar-fallback">
+                  {{ playerName(p).charAt(0) }}
+                </span>
+              }
+              <div>
+                <span class="player-name">{{ playerName(p) }}</span>
+                @if (p.position) { <span class="player-pos">{{ p.position }}</span> }
+              </div>
+            </div>
+
+            <div class="player-tags">
+              @if (canManage()) {
+                <button
+                  type="button"
+                  class="tag"
+                  [class.tag-on]="p.approved"
+                  (click)="toggleApproved(p)"
+                  [disabled]="savingId() === p.id"
+                >
+                  {{ p.approved ? 'Approved' : 'Pending' }}
+                </button>
+                @if ((lobby()?.price ?? 0) > 0) {
+                  <button
+                    type="button"
+                    class="tag"
+                    [class.tag-on]="p.paid"
+                    (click)="togglePaid(p)"
+                    [disabled]="savingId() === p.id"
+                  >
+                    {{ p.paid ? 'Paid' : 'Unpaid' }}
+                  </button>
+                }
+              } @else {
+                <span class="tag" [class.tag-on]="p.approved">
+                  {{ p.approved ? 'Approved' : 'Pending' }}
+                </span>
+                @if ((lobby()?.price ?? 0) > 0) {
+                  <span class="tag" [class.tag-on]="p.paid">
+                    {{ p.paid ? 'Paid' : 'Unpaid' }}
+                  </span>
+                }
+              }
+              @if (teamOf(p.id); as tl) {
+                <span class="tag tag-team">Team {{ tl }}</span>
+              }
+            </div>
+
+            @if (canManage()) {
+              <div class="player-actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost"
+                  (click)="startEdit(p)"
+                  [disabled]="savingId() === p.id"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  (click)="removePlayer(p)"
+                  [disabled]="savingId() === p.id"
+                >
+                  Remove
+                </button>
+              </div>
+            }
+          }
+        </li>
+      </ng-template>
+    </article>
+  }
+</section>

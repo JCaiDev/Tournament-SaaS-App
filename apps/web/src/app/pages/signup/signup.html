@@ -1,0 +1,121 @@
+<section class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-head">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <h1>Create your account</h1>
+      <p class="sub">Join the community and host or find volleyball games.</p>
+    </div>
+
+    @if (success()) {
+      <div class="notice notice-success" role="status">
+        <strong>Account created!</strong>
+        <p>
+          Your account is ready. Email/password login isn't wired up on the
+          backend yet, so for now continue with Google, or
+          <a routerLink="/login">go to login</a>.
+        </p>
+      </div>
+    } @else {
+      <!-- Google (works today) -->
+      <div class="google-slot">
+        <div #googleBtn></div>
+        @if (googleError()) {
+          <p class="field-error">{{ googleError() }}</p>
+        }
+      </div>
+
+      <div class="divider"><span>or sign up with email</span></div>
+
+      @if (serverError()) {
+        <div class="notice notice-error" role="alert">{{ serverError() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="name">Full name</label>
+          <input
+            id="name"
+            type="text"
+            class="input"
+            formControlName="name"
+            autocomplete="name"
+          />
+          @if (form.controls.name.touched && form.controls.name.invalid) {
+            <p class="field-error">Please enter your name.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            class="input"
+            formControlName="email"
+            autocomplete="email"
+          />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <p class="field-error">Enter a valid email address.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="birthDate">Date of birth</label>
+          <input
+            id="birthDate"
+            type="date"
+            class="input"
+            formControlName="birthDate"
+            autocomplete="bday"
+          />
+          @if (form.controls.birthDate.touched && form.controls.birthDate.invalid) {
+            <p class="field-error">Date of birth is required.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="password-wrap">
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              class="input"
+              formControlName="password"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="toggle"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              {{ showPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+
+          @if (form.controls.password.touched && passwordRules) {
+            <ul class="rules">
+              <li [class.ok]="passwordRules.minLength">At least 8 characters</li>
+              <li [class.ok]="passwordRules.upper">One uppercase letter</li>
+              <li [class.ok]="passwordRules.lower">One lowercase letter</li>
+              <li [class.ok]="passwordRules.number">One number</li>
+              <li [class.ok]="passwordRules.special">One special character</li>
+            </ul>
+          }
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary submit"
+          [disabled]="submitting()"
+        >
+          {{ submitting() ? 'Creating account…' : 'Create account' }}
+        </button>
+      </form>
+
+      <p class="switch">
+        Already have an account? <a routerLink="/login">Log in</a>
+      </p>
+    }
+  </div>
+</section>

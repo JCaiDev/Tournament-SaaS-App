@@ -1,0 +1,77 @@
+<section class="auth-wrap">
+  <div class="auth-card">
+    @if (loading()) {
+      <div class="panel skeleton"></div>
+    } @else if (notFound()) {
+      <div class="state">
+        <h2>Lobby not found</h2>
+        <p>This lobby may have been deleted or the link is incorrect.</p>
+        <a routerLink="/" class="btn btn-primary">Browse active lobbies</a>
+      </div>
+    } @else {
+      <div class="auth-head">
+        <h1>Edit lobby</h1>
+        <p class="sub">Update the game details below.</p>
+      </div>
+
+      @if (serverError()) { <div class="notice notice-error" role="alert">{{ serverError() }}</div> }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="lobbyName">Lobby name</label>
+          <input id="lobbyName" class="input" formControlName="lobbyName" />
+          @if (form.controls.lobbyName.touched && form.controls.lobbyName.invalid) { <p class="field-error">3–30 characters.</p> }
+        </div>
+
+        <div class="field">
+          <label for="location">Location</label>
+          <input id="location" class="input" formControlName="location" />
+          @if (form.controls.location.touched && form.controls.location.invalid) { <p class="field-error">At least 3 characters.</p> }
+        </div>
+
+        <div class="field">
+          <label for="startTime">Start time</label>
+          <app-datetime-picker formControlName="startTime" />
+        </div>
+
+        <div class="field">
+          <label for="endTime">End time</label>
+          <app-datetime-picker formControlName="endTime" />
+        </div>
+
+        <div class="field">
+          <label for="price">Price (CAD)</label>
+          <input id="price" type="number" min="0" class="input" formControlName="price" />
+        </div>
+
+        <div class="field">
+          <label for="capacity">Roster cap</label>
+          <input id="capacity" type="number" min="0" class="input" formControlName="capacity" />
+          <p class="field-hint">Max players on the roster. Use 0 for no limit — extras join a waitlist.</p>
+        </div>
+
+        <div class="field">
+          <label for="skillLevel">Skill level</label>
+          <select id="skillLevel" class="input" formControlName="skillLevel">
+            @for (opt of skillOptions; track opt[0]) { <option [value]="opt[0]">{{ opt[1] }}</option> }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="genderFormat">Format</label>
+          <select id="genderFormat" class="input" formControlName="genderFormat">
+            @for (opt of genderOptions; track opt[0]) { <option [value]="opt[0]">{{ opt[1] }}</option> }
+          </select>
+        </div>
+
+        <div class="field">
+          <label><input type="checkbox" formControlName="allowToApply" /> Accepting players</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary submit" [disabled]="submitting()">
+          {{ submitting() ? 'Saving…' : 'Save changes' }}
+        </button>
+      </form>
+    }
+  </div>
+</section>

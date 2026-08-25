@@ -1,0 +1,112 @@
+:host {
+  display: block;
+}
+
+.dt-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.dt-part {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 0.7rem;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.dt-date-part {
+  flex: 1 1 150px;
+}
+
+.dt-time-part {
+  flex: 1 1 130px;
+  position: relative;
+}
+
+.dt-part:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(35, 87, 137, 0.2);
+}
+
+.dt-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.dt-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0.7rem 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-foreground);
+}
+
+.dt-input:focus {
+  outline: none;
+}
+
+/* Native date input: hide the default calendar glyph (we render our own icon). */
+.dt-date-part input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+  position: absolute;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.dt-date-part {
+  position: relative;
+}
+
+/* Time dropdown: strip the native chevron/spinner and draw a clean one. */
+.dt-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding-right: 1.4rem;
+}
+
+.dt-time-part::after {
+  content: '';
+  position: absolute;
+  right: 0.8rem;
+  top: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+
+.dt-disabled {
+  opacity: 0.6;
+}
+
+.dt-disabled .dt-part {
+  background: var(--color-background);
+}
+
+@media (max-width: 640px) {
+  /* Full-width, taller controls are easier to tap on a phone. */
+  .dt-date-part,
+  .dt-time-part {
+    flex: 1 1 100%;
+  }
+
+  .dt-input {
+    padding: 0.85rem 0;
+  }
+}
