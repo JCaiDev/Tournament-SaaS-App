@@ -6,6 +6,66 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String?
+  refreshToken String        
+  name         String
+  birthDate    DateTime?     @db.Date
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+  role         Role          @default(PLAYER)
+  googleSub    String?       @unique
+  pictureUrl   String?
+  lobbies      Lobby[]       @relation("HostedLobbies")
+  lobbyPlayers LobbyPlayer[]
+}
+
+model Lobby {
+  id           String        @id @default(uuid())
+  location     String
+  hostId       String
+  allowToApply Boolean
+  createdAt    DateTime      @default(now())
+  endTime      DateTime
+  genderFormat GenderFormat
+  lobbyName    String
+  price        Float
+  skillLevel   SkillLevel
+  startTime    DateTime
+  host         User          @relation("HostedLobbies", fields: [hostId], references: [id])
+  players      LobbyPlayer[]
+}
+
+model LobbyPlayer {
+  id        String   @id @default(uuid())
+  lobbyId   String
+  userId    String?
+  guestName String?
+  position  String   @default("")
+  approved  Boolean  @default(false)
+  paid      Boolean  @default(false)
+  joinedAt  DateTime @default(now())
+  lobby     Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@unique([lobbyId, userId])
+  @@index([lobbyId])
+}
+
+model reFreshToken {
+  id        String      @id @default(uuid())
+  userId    String
+  tokenHash String      
+  createdAt DateTime    @default(now())
+  revokedAt DateTime    
+  expiresAt DateTime
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
 enum Role {
   ADMIN
   HOST
@@ -22,55 +82,4 @@ enum GenderFormat {
   MENS
   WOMENS
   COED
-}
-
-// --- The People ---
-model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  passwordHash String?
-  name         String
-  birthDate    DateTime?     @db.Date
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
-  role         Role          @default(PLAYER)
-  lobbies      Lobby[]       @relation("HostedLobbies")
-  googleSub    String?       @unique
-  pictureUrl   String?
-  lobbyPlayers LobbyPlayer[]
-}
-
-// --- The Games ---
-model Lobby {
-  id           String        @id @default(uuid())
-  lobbyName    String
-  location     String
-  startTime    DateTime
-  endTime      DateTime
-  price        Float
-  skillLevel   SkillLevel
-  genderFormat GenderFormat
-  allowToApply Boolean
-  createdAt    DateTime      @default(now())
-  hostId       String
-  host         User          @relation("HostedLobbies", fields: [hostId], references: [id])
-  players      LobbyPlayer[]
-}
-
-model LobbyPlayer {
-  id        String   @id @default(uuid())
-  lobbyId   String
-  userId    String?
-  guestName String?
-  position  String   @default("")
-  approved  Boolean  @default(false)
-  paid      Boolean  @default(false)
-  joinedAt  DateTime @default(now())
-
-  lobby     Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id])
-
-  @@unique([lobbyId, userId])
-  @@index([lobbyId])
 }
