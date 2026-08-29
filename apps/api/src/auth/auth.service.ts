@@ -5,6 +5,9 @@ import { googleUserPayloadSchema } from '../user/user.schemas'
 import * as UserServices from '../user/user.services'
 import type { GoogleUserPayload } from '../user/user.schemas'
 import argon2 from 'argon2'
+import { hashToken } from '../utils/crypto'
+import { prisma } from '../prisma'
+import crypto from 'crypto'
 
 const client = new OAuth2Client(ENV.GOOGLE_CLIENT_ID);
 
@@ -69,4 +72,43 @@ export const loginService = async (email: string, password: string) => {
 
     const { passwordHash, ...safeUser} = user
     return safeUser
+}
+
+export const rotateRefreshToken = async (rawToken: string) => {
+    if (!rawToken) throw new AppError ('Missing Token', 401);
+    
+    const hashedToken = hashToken(rawToken)
+    
+    const tokenRow = await prisma.refreshToken.findFirst({
+        where: {
+            tokenHash: hashedToken,
+            revokedAt: null,
+            expiresAt: {
+                gt: new Date()
+            }
+        },
+        include: { user: true },
+    })
+    if (!tokenRow) throw new AppError ('Invalid, expired, or revoked token', 401)
+
+    // mint a brand-new token
+    const newRawToken = crypto.randomBytes(64).toString('hex')
+    const newHash = hashToken(newRawToken)
+
+    //atomic: revoke old, create the new
+    await prisma.$transaction([
+        prisma.refreshToken.update({
+            where: { id: tokenRow.id},
+            data: { revokedAt: new Date() },
+        }),
+        prisma.refreshToken.create({
+            data: {
+                tokenHash: newHash,
+                userId: tokenRow.userId,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            }
+        })
+    ])
+
+    return { user: tokenRow.user, newRawToken}
 }

@@ -5,6 +5,7 @@ import { prisma } from '../../src/prisma';
 import crypto, { hash } from 'crypto';
 import { seedUser } from '../helpers/users';
 import { hashToken } from '../../src/utils/crypto';
+import { beforeEach, afterAll, describe, expect, it } from '@jest/globals'
 
 beforeEach(resetDb);
 afterAll(disconnectDb);
@@ -14,7 +15,7 @@ function generateRefreshToken() {
 }
 
 // TODO: build email/password auth post-MVP (currently Google-only)
-describe.skip('POST /auth/refresh', () => {
+describe('POST /auth/refresh', () => {
     it('Issues new access token and rotates refresh token', async () => {
         const user = await seedUser();
 

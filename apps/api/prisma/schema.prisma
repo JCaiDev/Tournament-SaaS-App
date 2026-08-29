@@ -7,20 +7,20 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
+  id           String         @id @default(uuid())
+  email        String         @unique
   passwordHash String?
-  refreshToken String        
   name         String
-  birthDate    DateTime?     @db.Date
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  birthDate    DateTime?      @db.Date
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   deletedAt    DateTime?
-  role         Role          @default(PLAYER)
-  googleSub    String?       @unique
+  role         Role           @default(PLAYER)
+  googleSub    String?        @unique
   pictureUrl   String?
-  lobbies      Lobby[]       @relation("HostedLobbies")
+  lobbies      Lobby[]        @relation("HostedLobbies")
   lobbyPlayers LobbyPlayer[]
+  refreshToken RefreshToken[]
 }
 
 model Lobby {
@@ -55,16 +55,15 @@ model LobbyPlayer {
   @@index([lobbyId])
 }
 
-model reFreshToken {
-  id        String      @id @default(uuid())
+model RefreshToken {
+  id        String    @id @default(uuid())
   userId    String
-  tokenHash String      
-  createdAt DateTime    @default(now())
-  revokedAt DateTime    
+  tokenHash String    @unique
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
   expiresAt DateTime
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
 
 enum Role {
   ADMIN
