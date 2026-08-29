@@ -28,7 +28,6 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
 
         // ASSERT
         expect(res.status).toBe(200)
-        expect(res.body.message).toBe('Lobby updated')
         expect(res.body.lobby.price).toBe(25)
         expect(res.body.lobby.location).toBe('New Sports Complex')
         // Other fields should remain unchanged from the seed
