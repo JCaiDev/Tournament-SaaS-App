@@ -39,6 +39,11 @@ export interface SignupResponse {
   user: PrivateUser;
 }
 
+// POST /auth/refresh — rotates the refresh cookie, returns a fresh access token only
+export interface RefreshResponse {
+  accessToken: string;
+}
+
 // PATCH /users/me — matches updateUserSchema (all optional)
 export interface UpdateUserRequest {
   name?: string;
