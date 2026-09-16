@@ -1,24 +1,24 @@
 import { OAuth2Client } from 'google-auth-library';
 import { ENV } from '../config/env';
 import { AppError } from '../errors/AppErrors';
-import { googleUserPayloadSchema } from '../user/user.schemas'
-import * as UserServices from '../user/user.services'
-import type { GoogleUserPayload } from '../user/user.schemas'
-import argon2 from 'argon2'
-import { hashToken } from '../utils/crypto'
-import { prisma } from '../prisma'
-import crypto from 'crypto'
+import { googleUserPayloadSchema } from '../user/user.schemas';
+import * as UserServices from '../user/user.services';
+import type { GoogleUserPayload } from '../user/user.schemas';
+import argon2 from 'argon2';
+import { hashToken } from '../utils/crypto';
+import { prisma } from '../prisma';
+import crypto from 'crypto';
 
 const client = new OAuth2Client(ENV.GOOGLE_CLIENT_ID);
 
 export const verifyGoogleToken = async (idToken: string) => {
     const ticket = await client.verifyIdToken({
         idToken,
-        audience: ENV.GOOGLE_CLIENT_ID
-    })
+        audience: ENV.GOOGLE_CLIENT_ID,
+    });
     const payload = ticket.getPayload();
     if (payload === undefined) {
-        throw new AppError('Invalid Google Token', 401)
+        throw new AppError('Invalid Google Token', 401);
     }
 
     const result = googleUserPayloadSchema.safeParse({
@@ -27,78 +27,88 @@ export const verifyGoogleToken = async (idToken: string) => {
         name: payload.name,
         picture: payload.picture,
         emailVerified: payload.email_verified,
-    })
+    });
 
     if (!result.success) {
-        throw new AppError("Invalid Google Token", 401)
+        throw new AppError('Invalid Google Token', 401);
     }
 
-    return result.data
-}
+    return result.data;
+};
 
 export const findOrCreateGoogleUser = async (claims: GoogleUserPayload) => {
     // finduserbygooglesub if exists return login
-    const existingByGoogleSub = await UserServices.findUserByGoogleSub(claims.sub)
+    const existingByGoogleSub = await UserServices.findUserByGoogleSub(
+        claims.sub,
+    );
     if (existingByGoogleSub !== null) {
-        return existingByGoogleSub
+        return existingByGoogleSub;
     }
 
-    // finduserby email if not email verfieid reutrn 409 error
-    const existingByEmail = await UserServices.findUserByEmail(claims.email)
+    // finduserby email if not email verfieid return 409 error
+    const existingByEmail = await UserServices.findUserByEmail(claims.email);
 
     if (existingByEmail !== null) {
         if (claims.emailVerified !== true) {
-            throw new AppError('Account Conflict - please login with email', 409)
+            throw new AppError(
+                'Account Conflict - please login with email',
+                409,
+            );
         }
         if (existingByEmail.googleSub === null) {
-            return UserServices.linkGoogleAccount(existingByEmail.id, claims.sub)
+            return UserServices.linkGoogleAccount(
+                existingByEmail.id,
+                claims.sub,
+            );
         }
-        throw new AppError('Account Conflict - please login with email', 409)
+        throw new AppError('Account Conflict - please login with email', 409);
     }
 
     // no matches no sub no email -> return create new account
-    return UserServices.createGoogleUser(claims)
-} 
+    return UserServices.createGoogleUser(claims);
+};
 
 export const loginService = async (email: string, password: string) => {
-    const user = await UserServices.findUserForLogin(email)
+    const user = await UserServices.findUserForLogin(email);
 
     if (!user || user.passwordHash === null) {
-        throw new AppError('Incorrect Login Credentials', 401)
+        throw new AppError('Incorrect Login Credentials', 401);
     }
 
-    const correctPassword = await argon2.verify(user.passwordHash, password)
-    if (!correctPassword) throw new AppError ('Incorrect Login Credentials', 401)
+    const correctPassword = await argon2.verify(user.passwordHash, password);
+    if (!correctPassword)
+        throw new AppError('Incorrect Login Credentials', 401);
 
-    const { passwordHash, ...safeUser} = user
-    return safeUser
-}
+    const { passwordHash, ...safeUser } = user;
+    return safeUser;
+};
 
 export const rotateRefreshToken = async (rawToken: string) => {
-    if (!rawToken) throw new AppError ('Missing Token', 401);
-    
-    const hashedToken = hashToken(rawToken)
-    
+    if (!rawToken) throw new AppError('Missing Token', 401);
+
+    const hashedToken = hashToken(rawToken);
+
     const tokenRow = await prisma.refreshToken.findFirst({
         where: {
             tokenHash: hashedToken,
             revokedAt: null,
             expiresAt: {
-                gt: new Date()
-            }
+                gt: new Date(),
+            },
         },
         include: { user: true },
-    })
-    if (!tokenRow) throw new AppError ('Invalid, expired, or revoked token', 401)
+    });
+    if (!tokenRow)
+        throw new AppError('Invalid, expired, or revoked token', 401);
 
     // mint a brand-new token
-    const newRawToken = crypto.randomBytes(64).toString('hex')
-    const newHash = hashToken(newRawToken)
+    const newRawToken = crypto.randomBytes(64).toString('hex');
+    const newHash = hashToken(newRawToken);
 
     //atomic: revoke old, create the new
     await prisma.$transaction([
         prisma.refreshToken.update({
-            where: { id: tokenRow.id},
+            where: { id: tokenRow.id },
             data: { revokedAt: new Date() },
         }),
         prisma.refreshToken.create({
@@ -106,9 +116,44 @@ export const rotateRefreshToken = async (rawToken: string) => {
                 tokenHash: newHash,
                 userId: tokenRow.userId,
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            }
-        })
-    ])
+            },
+        }),
+    ]);
 
-    return { user: tokenRow.user, newRawToken}
-}
+    return { user: tokenRow.user, newRawToken };
+};
+
+export const mintRefreshToken = async (userId: string) => {
+    // rotateRefreshToken is for the exchange stage. Login needs a separate operation such as mintRefreshToken(user.id)
+    // generates a random raw token
+    const rawToken = crypto.randomBytes(64).toString('hex');
+    // hashes it,
+    const tokenHash = hashToken(rawToken);
+
+    // stores the hash with userId and a seven-day expiry,
+    await prisma.refreshToken.create({
+        data: {
+            tokenHash,
+            userId,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+    });
+    // returns the raw token,
+    return rawToken;
+    // lets the controller call res.cookie(...).
+};
+
+export const logoutService = async (rawToken: string | undefined) => {
+    if (!rawToken) return;
+    const tokenHash = hashToken(rawToken);
+
+    await prisma.refreshToken.updateMany({
+        where: {
+            tokenHash: tokenHash,
+            revokedAt: null,
+        },
+        data: {
+            revokedAt: new Date(),
+        },
+    });
+};

@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, finalize, map, shareReplay, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   AuthResponse,
   LoginRequest,
   PrivateUser,
+  RefreshResponse,
   SignupRequest,
   SignupResponse,
   UpdateUserRequest,
@@ -23,8 +24,29 @@ export class AuthService {
   readonly currentUser = signal<PrivateUser | null>(this.readStoredUser());
   readonly isLoggedIn = computed(() => this.currentUser() !== null);
 
+  // Shared across concurrent 401s so a burst of failed requests triggers one
+  // refresh, not one per request — each rotation invalidates the last cookie.
+  private refreshInFlight: Observable<string> | null = null;
+
   getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
+  }
+
+  /**
+   * POST /auth/refresh — exchanges the httpOnly refresh cookie for a new access
+   * token (and a rotated cookie). Callers share one in-flight request.
+   */
+  refreshAccessToken(): Observable<string> {
+    this.refreshInFlight ??= this.http
+      .post<RefreshResponse>(`${this.base}/auth/refresh`, {})
+      .pipe(
+        map((res) => res.accessToken),
+        tap((token) => localStorage.setItem(TOKEN_KEY, token)),
+        finalize(() => (this.refreshInFlight = null)),
+        shareReplay({ bufferSize: 1, refCount: false })
+      );
+
+    return this.refreshInFlight;
   }
 
   /** POST /users — create an account. Does NOT log the user in (no token returned). */
