@@ -103,7 +103,17 @@ export class AuthService {
     );
   }
 
+  /**
+   * POST /auth/logout — revokes the refresh token server-side, then clears the
+   * local session. Local state is cleared regardless of the request's outcome:
+   * the user asked to be logged out, so a network failure must not leave them
+   * looking signed in.
+   */
   logout(): void {
+    this.http
+      .post(`${this.base}/auth/logout`, {})
+      .subscribe({ error: () => {} });
+
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this.currentUser.set(null);

@@ -1,0 +1,18 @@
+# Netlify site settings: set "Base directory" to apps/web.
+[build]
+  command = "npm run build"
+  publish = "dist/web/browser"
+
+# Proxy API calls so the browser sees one site (keeps the sameSite=strict refresh cookie working).
+# TODO(Step 6): replace YOUR-API.onrender.com with the real Render URL.
+[[redirects]]
+  from = "/api/*"
+  to = "https://YOUR-API.onrender.com/:splat"
+  status = 200
+  force = true
+
+# Client-side routes (e.g. /lobbies/123) must serve index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
