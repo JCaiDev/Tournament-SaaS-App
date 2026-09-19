@@ -96,12 +96,13 @@ Don't assume these are finished — they're identified but not yet fixed:
 Update the checkboxes as steps are finished. One step at a time.
 
 - [x] **Step 0 (Claude):** teacher rules in this file; frontend production build + `netlify.toml`.
-- [ ] **Step 1 — Postgres basics (local):** connect to the docker Postgres with `psql`, list tables, run `SELECT`s on `User` / `RefreshToken`, map tables to Prisma models.
-- [ ] **Step 2 — Supabase:** create the project; pooled vs direct connection strings; add `DIRECT_URL`; run `prisma migrate deploy`.
+- [x] **Step 1 — Postgres basics (local):** connect to the docker Postgres with `psql`, list tables, run `SELECT`s on `User` / `RefreshToken`, map tables to Prisma models.
+- [x] **Step 2 — Supabase:** create the project; pooled vs direct connection strings; add `DIRECT_URL`; run `prisma migrate deploy`.
 - [ ] **Step 3 — Redis basics:** what Redis is, run it locally, how BullMQ uses it; make `REDIS_URL` configurable.
 - [ ] **Step 4 — Env-driven config:** `CORS_ORIGIN`, `REDIS_URL`, `DIRECT_URL` validated in `config/env.ts`.
 - [ ] **Step 5 — Render:** Dockerfile cleanup, deploy the API, health check, migrations.
 - [ ] **Step 6 — Netlify:** fill in the proxy URL in `apps/web/netlify.toml`, deploy, add the Netlify domain to Google OAuth authorized origins.
+- [ ] **Step 7 — Scaling with Redis (post-deploy, learning exercise):** load-test an endpoint to get a baseline (e.g. `autocannon`/`k6`), add cache-aside caching with TTL + invalidation (e.g. open lobby list), re-measure; then Redis-backed rate limiting. Goal is interview-ready scaling skills, not real traffic needs.
 
 ## Dev commands (`apps/api`)
 
