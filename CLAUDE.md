@@ -54,9 +54,9 @@ This loop is the default for backend work in `apps/api`. It does not apply to re
 
 **Auth routes**: `POST /auth/google`, `/auth/login`, `/auth/refresh`, `/auth/logout` (logout revokes the refresh token, clears the cookie, returns 204 even with no cookie). No logout tests yet.
 
-**Background jobs**: BullMQ `queues/email.queue.ts` + `workers/email.worker.ts` — currently a stub (logs instead of sending) and **not yet invoked** from signup. `server.ts` imports the worker, so the API process itself runs it and **needs Redis reachable at startup**. `npm run worker` also exists to run it standalone.
+**Background jobs**: BullMQ `queues/email.queue.ts` + `workers/email.worker.ts` — currently a stub (logs instead of sending) and **not yet invoked** from signup. `server.ts` no longer imports the worker, so the API process does **not** need Redis at startup; `npm run worker` runs it as a separate process. Nothing currently runs the worker in deployment. `email.worker.ts` also still throws a deliberate `Math.random() < 0.5` fake crash for retry practice — remove before it sends real email.
 
-**Env validation**: `config/env.ts` throws at startup if `NODE_ENV`, `DATABASE_URL`, `GOOGLE_CLIENT_ID`, or `JWT_SECRET` are missing.
+**Env validation**: `config/env.ts` throws at startup if `NODE_ENV`, `DATABASE_URL`, `DIRECT_URL`, `GOOGLE_CLIENT_ID`, `JWT_SECRET`, or `CORS_ORIGIN` are missing.
 
 **Testing**: Jest, `tests/` mirrors the module structure (api/int/unit tests per feature), run against real Postgres + Redis (see `docker-compose.yml` and CI).
 
@@ -75,9 +75,10 @@ This loop is the default for backend work in `apps/api`. It does not apply to re
 
 Don't assume these are finished — they're identified but not yet fixed:
 
-- CORS origin is hardcoded to `http://localhost:4200` in `app.ts` — will break once deployed.
 - Redis connection is hardcoded to `127.0.0.1:6379` in both `email.queue.ts` and `email.worker.ts` — not env-configurable, will break in any real deployment topology.
-- No production Dockerfile/build for `apps/web`; the existing `docker-compose.yml` is dev-only (default Postgres creds, `prisma migrate dev`).
+- No production Dockerfile/build for `apps/web`; the existing `docker-compose.yml` is dev-only (default Postgres creds, `prisma migrate dev`) and its `api` service is missing the env vars `config/env.ts` now requires, so `docker compose up api` fails at startup.
+- The API image is ~422MB of content and still ships devDependencies (TypeScript, Jest, ts-node-dev). A multi-stage build would cut it down — not started.
+- Prisma warns it cannot detect system OpenSSL in the image. Likely benign because `prisma.ts` uses the `@prisma/adapter-pg` driver adapter rather than the native Rust engine, but **a real DB query from inside the container has not been tested yet**.
 - Signup doesn't enqueue the welcome email even though the BullMQ plumbing exists.
 - No password reset or email verification flow.
 - `Lobby.price` / `LobbyPlayer.paid` exist in the schema with no payment integration — `paid` appears to be host-toggled manually. Unconfirmed whether that's the intended v1 design or a gap.
@@ -99,8 +100,8 @@ Update the checkboxes as steps are finished. One step at a time.
 - [x] **Step 1 — Postgres basics (local):** connect to the docker Postgres with `psql`, list tables, run `SELECT`s on `User` / `RefreshToken`, map tables to Prisma models.
 - [x] **Step 2 — Supabase:** create the project; pooled vs direct connection strings; add `DIRECT_URL`; run `prisma migrate deploy`.
 - [ ] **Step 3 — Redis basics:** what Redis is, run it locally, how BullMQ uses it; make `REDIS_URL` configurable.
-- [ ] **Step 4 — Env-driven config:** `CORS_ORIGIN`, `REDIS_URL`, `DIRECT_URL` validated in `config/env.ts`.
-- [ ] **Step 5 — Render:** Dockerfile cleanup, deploy the API, health check, migrations.
+- [ ] **Step 4 — Env-driven config:** `CORS_ORIGIN` ✅ and `DIRECT_URL` ✅ validated in `config/env.ts`; `REDIS_URL` still hardcoded (belongs with Step 3).
+- [ ] **Step 5 — Render (in progress):** Dockerfile ✅ builds and serves `/health` from a container. Remaining: verify a real DB query from inside the container, `prisma migrate deploy` against Supabase, create the Render service + env vars, point Render's health check at `/health`.
 - [ ] **Step 6 — Netlify:** fill in the proxy URL in `apps/web/netlify.toml`, deploy, add the Netlify domain to Google OAuth authorized origins.
 - [ ] **Step 7 — Scaling with Redis (post-deploy, learning exercise):** load-test an endpoint to get a baseline (e.g. `autocannon`/`k6`), add cache-aside caching with TTL + invalidation (e.g. open lobby list), re-measure; then Redis-backed rate limiting. Goal is interview-ready scaling skills, not real traffic needs.
 
@@ -115,4 +116,40 @@ npm run db:push       # prisma db push (dev DB)
 npm run db:test:push  # prisma db push (test DB)
 npm run build         # prisma generate + tsc
 npm run typecheck     # tsc --noEmit
+```
+
+## Docker (API image)
+
+**Build from the repo root, not from `apps/api`:**
+
+```
+docker build -t tournament-api -f apps/api/Dockerfile .
+```
+
+The build context must be the repo root because npm workspaces keep a **single
+`package-lock.json` at the root** — a build scoped to `apps/api` cannot see it,
+and npm will not generate a per-workspace lockfile. The Dockerfile therefore
+copies the root manifests plus each workspace's `package.json`, then installs
+with `npm ci --workspace=@my-app/api --include-workspace-root` so Angular's
+dependencies never enter the API image.
+
+- `.dockerignore` lives at the **repo root** (Docker only reads the one at the
+  context root). It excludes `**/node_modules`, `**/.env*`, `**/dist`, `.git`
+  and `apps/web` — with `!apps/web/package.json` re-included, since npm needs
+  every workspace manifest to validate the lockfile.
+- `apps/api/tsconfig.json` sets `rootDir: ./src` so compiled output lands at
+  `dist/server.js`, matching `package.json`'s `main` and `start`. Without it,
+  TypeScript infers the root from the deepest common parent and emits
+  `dist/src/server.js`, which breaks `npm start`.
+- The build passes a placeholder `DIRECT_URL` because `prisma.config.ts`
+  resolves it eagerly, though `prisma generate` never connects to a database.
+- Render builds this image itself on push; local builds are for testing before
+  pushing.
+
+Run it locally (needs all env vars `config/env.ts` requires):
+
+```
+docker run --rm -p 3002:3001 -e NODE_ENV=production -e DATABASE_URL=... \
+  -e DIRECT_URL=... -e JWT_SECRET=... -e GOOGLE_CLIENT_ID=... \
+  -e CORS_ORIGIN=... tournament-api
 ```

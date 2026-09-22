@@ -1,26 +1,31 @@
-# 1. Base image (runtime)
-FROM node:20-alpine
+FROM node:20-slim
 
-# 2. Set working directory inside container
 WORKDIR /app
 
-# 3. Copy dependency files first (for caching)
+# Root manifests: the root package.json declares the workspaces, and the
+# root package-lock.json is the single source of truth for versions.
 COPY package.json package-lock.json ./
 
-# 4. Install dependencies
-RUN npm ci
+# Each workspace's manifest, but not its source. npm needs every workspace
+# manifest to validate the lockfile, and copying only these keeps the
+# install layer cached when application code changes.
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY packages/shared/package.json packages/shared/
 
-# 5. Copy the rest of the source code
-COPY . .
+# Install only the API's dependencies plus the root's, so Angular's
+# dependencies never enter this image.
+RUN npm ci --workspace=@my-app/api --include-workspace-root
 
-# 6. Generate Prisma client
-RUN npx prisma generate
+# The API source. This is the layer that changes on most builds.
+COPY apps/api apps/api
 
-# 7. Build TypeScript
-RUN npm run build
+# Runs "prisma generate && tsc" with apps/api as the working directory.
+# prisma.config.ts resolves DIRECT_URL eagerly, but "prisma generate" never
+# connects to a database, so a placeholder satisfies it. It is scoped to this
+# one command and is not stored in the image.
+RUN DIRECT_URL="postgresql://placeholder" npm run build --workspace=@my-app/api
 
-# 8. Expose the port your app runs on
 EXPOSE 3001
 
-# 9. Start the app
-CMD ["node", "dist/server.js"]
+CMD ["node", "apps/api/dist/server.js"]
