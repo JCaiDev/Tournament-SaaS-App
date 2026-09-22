@@ -1,0 +1,29 @@
+# dependencies
+**/node_modules
+
+# build output
+**/dist
+
+# environment variables / secrets
+**/.env
+**/.env.*
+
+# git history
+.git
+.gitignore
+
+# frontend (not needed in the API image), except its manifest, which
+# npm needs to validate the workspace tree against the root lockfile
+apps/web
+!apps/web/package.json
+
+# logs
+**/*.log
+
+# caches
+**/.turbo
+**/coverage
+
+# editor / OS
+.vscode
+**/.DS_Store
