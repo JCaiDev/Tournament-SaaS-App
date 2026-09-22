@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import 'dotenv/config';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -9,24 +9,26 @@ import healthRoutes from './health/health.routes';
 import lobbyRoutes from './lobby/lobby.routes';
 import lobbyPlayerRoutes from './lobby/lobby-player.routes';
 import { errorHandler } from './middleware/errorHandler';
-
+import { ENV } from './config/env';
 
 export const app = express();
 
 // Global Middleware
-app.use(cors({
-    origin: 'http://localhost:4200',
-    credentials: true,
-}));
+app.use(
+    cors({
+        origin: ENV.CORS_ORIGIN,
+        credentials: true,
+    }),
+);
 app.use(express.json());
 app.use(cookieParser());
 
 // Routes
 app.use('/health', healthRoutes);
 app.use('/users', userRoutes);
-app.use('/auth', authRoutes)
-app.use('/lobbies', lobbyRoutes)
-app.use('/lobbies', lobbyPlayerRoutes)
+app.use('/auth', authRoutes);
+app.use('/lobbies', lobbyRoutes);
+app.use('/lobbies', lobbyPlayerRoutes);
 
 // Error handler should be the last middleware
-app.use(errorHandler)
+app.use(errorHandler);
