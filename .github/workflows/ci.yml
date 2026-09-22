@@ -42,6 +42,7 @@ jobs:
       JWT_SECRET: test-secret-key
       GOOGLE_CLIENT_ID: test-google-client-id
       NODE_ENV: test
+      CORS_ORIGIN: http://localhost:4200
 
     steps:
       - name: Checkout repository

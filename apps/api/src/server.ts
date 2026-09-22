@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import './config/env';
-import './workers/email.worker';
 import { app } from './app';
 
 let port = Number(process.env.PORT) || 3001;

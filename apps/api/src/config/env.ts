@@ -4,6 +4,7 @@ const requiredEnvVars = [
     'DIRECT_URL',
     'GOOGLE_CLIENT_ID',
     'JWT_SECRET',
+    'CORS_ORIGIN',
 ] as const;
 
 for (const envVar of requiredEnvVars) {
@@ -18,4 +19,5 @@ export const ENV = {
     DIRECT_URL: process.env.DIRECT_URL!,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
     JWT_SECRET: process.env.JWT_SECRET!,
+    CORS_ORIGIN: process.env.CORS_ORIGIN!,
 };
