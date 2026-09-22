@@ -1,5 +1,5 @@
 import type { GoogleLoginInput, LoginInput } from './auth.schemas';
-import type { Request, Response, NextFunction } from 'express';
+import { type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import {
     verifyGoogleToken,
@@ -7,6 +7,7 @@ import {
     loginService,
     rotateRefreshToken,
     mintRefreshToken,
+    logoutService,
 } from './auth.service';
 import { ENV } from '../config/env';
 
@@ -94,3 +95,26 @@ export async function refreshController(
         next(error);
     }
 }
+
+export const logoutController = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        const rawToken = req.cookies.refreshToken;
+
+        await logoutService(rawToken);
+
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: true,
+            path: '/',
+        });
+
+        return res.status(204).end();
+    } catch (error) {
+        next(error);
+    }
+};

@@ -6,9 +6,20 @@ A volleyball/pickup-game lobby SaaS. Hosts create "lobbies" (games), players joi
 - `apps/web` — Angular (standalone components, signals)
 - `packages/shared` — shared code between them
 
+## Claude is my teacher
+
+I'm using this project to become an **employable backend engineer within 3 months**, and I'm a **beginner** at Postgres, Redis, and deployment. Claude's role here is my teacher and code reviewer, not my backend coder.
+
+- **Go slow, one concept at a time.** Teach one idea per message, then stop and let me respond. Don't stack decisions, warnings, and principles in one reply.
+- **Plain language first.** Define every new term the first time it appears; use an everyday analogy when it helps.
+- **Check understanding before moving on.** Ask one question at a time, not a list.
+- **I type every letter of backend code.** Never write `apps/api` code for me unless I explicitly say "just write it" / "show me the code" for that specific request.
+- **Review, then quiz.** After I write something, review it like a senior engineer would, then quiz me on the concepts.
+- **One roadmap step per session.** Finish a step, then wait for me before starting the next one (see "Learning roadmap" below).
+
 ## How to work with the user on this repo
 
-The user is using this project to become an **employable backend engineer within 3 months**. This drives a hard split in how Claude should behave depending on which app is being touched.
+This drives a hard split in how Claude should behave depending on which app is being touched.
 
 ### `apps/web` (frontend) — code normally
 Implement, edit, and write frontend code directly, same as any other project.
@@ -41,7 +52,9 @@ This loop is the default for backend work in `apps/api`. It does not apply to re
 
 **Data model** (`prisma/schema.prisma`): `User`, `Lobby` (hosted by a `User`), `LobbyPlayer` (join table: `approved`, `paid`, `position`), `RefreshToken`.
 
-**Background jobs**: BullMQ `queues/email.queue.ts` + `workers/email.worker.ts` — currently a stub (logs instead of sending) and **not yet invoked** from signup. The worker is a separate process (`npm run worker`), not started by `server.ts`.
+**Auth routes**: `POST /auth/google`, `/auth/login`, `/auth/refresh`, `/auth/logout` (logout revokes the refresh token, clears the cookie, returns 204 even with no cookie). No logout tests yet.
+
+**Background jobs**: BullMQ `queues/email.queue.ts` + `workers/email.worker.ts` — currently a stub (logs instead of sending) and **not yet invoked** from signup. `server.ts` imports the worker, so the API process itself runs it and **needs Redis reachable at startup**. `npm run worker` also exists to run it standalone.
 
 **Env validation**: `config/env.ts` throws at startup if `NODE_ENV`, `DATABASE_URL`, `GOOGLE_CLIENT_ID`, or `JWT_SECRET` are missing.
 
@@ -51,7 +64,9 @@ This loop is the default for backend work in `apps/api`. It does not apply to re
 
 - Standalone Angular components, signals for state (e.g. `AuthService.currentUser`).
 - `core/auth.guard.ts` — route protection (redirects to `/login` if not signed in).
-- `core/auth.interceptor.ts` — attaches the Bearer token to outgoing requests.
+- `core/auth.interceptor.ts` — attaches the Bearer token, sends cookies, and on a 401 calls `/auth/refresh` once and retries (skips the `/auth/*` endpoints listed in `NON_RETRYABLE`).
+- `environments/environment.ts` (dev, `apiBaseUrl: http://localhost:3001`) is swapped for `environment.production.ts` (`apiBaseUrl: /api`) in production builds.
+- `netlify.toml` — Netlify build config; proxies `/api/*` to the Render API and falls back to `index.html` for client-side routes.
 - `services/auth.service.ts`, `services/lobby.service.ts` — talk to the API via `environment.apiBaseUrl`.
 - `shared/mock/mock-lobby.api.ts` — dev-only in-memory backend, toggled by `environment.mockApi` (currently `false` — expects the real API to be running).
 - Pages: home, login, signup, profile, create-lobby, edit-lobby, lobby-detail.
@@ -60,13 +75,34 @@ This loop is the default for backend work in `apps/api`. It does not apply to re
 
 Don't assume these are finished — they're identified but not yet fixed:
 
-- No frontend silent-refresh flow: nothing catches a 401 and calls `/auth/refresh` before retrying, so users get logged out ~15 min after login with no warning.
 - CORS origin is hardcoded to `http://localhost:4200` in `app.ts` — will break once deployed.
 - Redis connection is hardcoded to `127.0.0.1:6379` in both `email.queue.ts` and `email.worker.ts` — not env-configurable, will break in any real deployment topology.
 - No production Dockerfile/build for `apps/web`; the existing `docker-compose.yml` is dev-only (default Postgres creds, `prisma migrate dev`).
 - Signup doesn't enqueue the welcome email even though the BullMQ plumbing exists.
 - No password reset or email verification flow.
 - `Lobby.price` / `LobbyPlayer.paid` exist in the schema with no payment integration — `paid` appears to be host-toggled manually. Unconfirmed whether that's the intended v1 design or a gap.
+
+## Deployment target
+
+- **API** → Render (Docker web service), plus Render Key Value (Redis) for BullMQ.
+- **Frontend** → Netlify (static site). The browser calls `/api/*` on the Netlify domain and Netlify proxies it to Render, so frontend and API look like one site and the `sameSite=strict` refresh cookie keeps working.
+- **Database** → Supabase, used **only as managed Postgres**. Do not use Supabase Auth — the app has its own auth.
+  - Pooled connection string (port 6543) → `DATABASE_URL`, used by the running API.
+  - Direct/session connection string (port 5432) → for migrations (`prisma migrate deploy`).
+- Fly.io is not used (no free tier).
+
+## Learning roadmap
+
+Update the checkboxes as steps are finished. One step at a time.
+
+- [x] **Step 0 (Claude):** teacher rules in this file; frontend production build + `netlify.toml`.
+- [x] **Step 1 — Postgres basics (local):** connect to the docker Postgres with `psql`, list tables, run `SELECT`s on `User` / `RefreshToken`, map tables to Prisma models.
+- [x] **Step 2 — Supabase:** create the project; pooled vs direct connection strings; add `DIRECT_URL`; run `prisma migrate deploy`.
+- [ ] **Step 3 — Redis basics:** what Redis is, run it locally, how BullMQ uses it; make `REDIS_URL` configurable.
+- [ ] **Step 4 — Env-driven config:** `CORS_ORIGIN`, `REDIS_URL`, `DIRECT_URL` validated in `config/env.ts`.
+- [ ] **Step 5 — Render:** Dockerfile cleanup, deploy the API, health check, migrations.
+- [ ] **Step 6 — Netlify:** fill in the proxy URL in `apps/web/netlify.toml`, deploy, add the Netlify domain to Google OAuth authorized origins.
+- [ ] **Step 7 — Scaling with Redis (post-deploy, learning exercise):** load-test an endpoint to get a baseline (e.g. `autocannon`/`k6`), add cache-aside caching with TTL + invalidation (e.g. open lobby list), re-measure; then Redis-backed rate limiting. Goal is interview-ready scaling skills, not real traffic needs.
 
 ## Dev commands (`apps/api`)
 

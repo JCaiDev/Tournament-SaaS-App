@@ -69,6 +69,8 @@ export const findOrCreateGoogleUser = async (claims: GoogleUserPayload) => {
 };
 
 export const loginService = async (email: string, password: string) => {
+    if (!email) throw new AppError('Incorrect Login Credentials', 401);
+
     const user = await UserServices.findUserForLogin(email);
 
     if (!user || user.passwordHash === null) {
@@ -83,7 +85,7 @@ export const loginService = async (email: string, password: string) => {
     return safeUser;
 };
 
-export const rotateRefreshToken = async (rawToken: string) => {
+export const rotateRefreshToken = async (rawToken: string | undefined) => {
     if (!rawToken) throw new AppError('Missing Token', 401);
 
     const hashedToken = hashToken(rawToken);

@@ -7,7 +7,12 @@ import { AuthService } from '../services/auth.service';
 
 // A 401 from these means "bad credentials" or "refresh cookie is gone" — not
 // "access token expired", so retrying them after a refresh would loop forever.
-const NON_RETRYABLE = ['/auth/refresh', '/auth/login', '/auth/google'];
+const NON_RETRYABLE = [
+  '/auth/refresh',
+  '/auth/login',
+  '/auth/google',
+  '/auth/logout',
+];
 
 /**
  * Attaches `Authorization: Bearer <token>` to API requests, sends cookies so the
