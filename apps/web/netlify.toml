@@ -1,13 +1,14 @@
-# Netlify site settings: set "Base directory" to apps/web.
+# Netlify site settings: "Base directory" is apps/web, but Netlify resolves
+# these paths against the repository root, so they are written repo-relative.
 [build]
+  base = "apps/web"
   command = "npm run build"
-  publish = "dist/web/browser"
+  publish = "apps/web/dist/web/browser"
 
 # Proxy API calls so the browser sees one site (keeps the sameSite=strict refresh cookie working).
-# TODO(Step 6): replace YOUR-API.onrender.com with the real Render URL.
 [[redirects]]
   from = "/api/*"
-  to = "https://YOUR-API.onrender.com/:splat"
+  to = "https://tournament-saas-app.onrender.com/:splat"
   status = 200
   force = true
 
