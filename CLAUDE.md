@@ -78,12 +78,21 @@ Don't assume these are finished — they're identified but not yet fixed:
 - Redis connection is hardcoded to `127.0.0.1:6379` in both `email.queue.ts` and `email.worker.ts` — not env-configurable, will break in any real deployment topology.
 - No production Dockerfile/build for `apps/web`; the existing `docker-compose.yml` is dev-only (default Postgres creds, `prisma migrate dev`) and its `api` service is missing the env vars `config/env.ts` now requires, so `docker compose up api` fails at startup.
 - The API image is ~422MB of content and still ships devDependencies (TypeScript, Jest, ts-node-dev). A multi-stage build would cut it down — not started.
-- Prisma warns it cannot detect system OpenSSL in the image. Likely benign because `prisma.ts` uses the `@prisma/adapter-pg` driver adapter rather than the native Rust engine, but **a real DB query from inside the container has not been tested yet**.
+- Prisma warns it cannot detect system OpenSSL in the image. Confirmed benign: `prisma.ts` uses the `@prisma/adapter-pg` driver adapter rather than the native Rust engine, and real queries against Supabase succeed from inside the container and from Render.
+- `CORS_ORIGIN` on Render is still `http://localhost:4200`. Harmless today because Netlify proxies `/api/*`, so the browser only ever makes same-origin requests and never performs a CORS check — but it should be the Netlify domain.
+- Google OAuth authorized origins list only `http://localhost:4200`, so **Google sign-in fails on the deployed site** until `https://sideout-app.netlify.app` is added in Google Cloud Console.
+- The deployed signup → login → create-lobby flow has not been tested end to end yet.
+- Naming is inconsistent: the site says "Volleyball Lobbies", the tab title "Active Lobbies · Volleyball", the Netlify subdomain `sideout-app`, and `email.worker.ts` sends "Welcome to Neow!".
 - Signup doesn't enqueue the welcome email even though the BullMQ plumbing exists.
 - No password reset or email verification flow.
 - `Lobby.price` / `LobbyPlayer.paid` exist in the schema with no payment integration — `paid` appears to be host-toggled manually. Unconfirmed whether that's the intended v1 design or a gap.
 
 ## Deployment target
+
+**Live URLs** (deployed 2026-09-22):
+- Frontend → `https://sideout-app.netlify.app`
+- API → `https://tournament-saas-app.onrender.com` (Render free tier, so it spins
+  down after ~15 min idle; the first request then takes 30–60s)
 
 - **API** → Render (Docker web service), plus Render Key Value (Redis) for BullMQ.
 - **Frontend** → Netlify (static site). The browser calls `/api/*` on the Netlify domain and Netlify proxies it to Render, so frontend and API look like one site and the `sameSite=strict` refresh cookie keeps working.
@@ -101,8 +110,8 @@ Update the checkboxes as steps are finished. One step at a time.
 - [x] **Step 2 — Supabase:** create the project; pooled vs direct connection strings; add `DIRECT_URL`; run `prisma migrate deploy`.
 - [ ] **Step 3 — Redis basics:** what Redis is, run it locally, how BullMQ uses it; make `REDIS_URL` configurable.
 - [ ] **Step 4 — Env-driven config:** `CORS_ORIGIN` ✅ and `DIRECT_URL` ✅ validated in `config/env.ts`; `REDIS_URL` still hardcoded (belongs with Step 3).
-- [ ] **Step 5 — Render (in progress):** Dockerfile ✅ builds and serves `/health` from a container. Remaining: verify a real DB query from inside the container, `prisma migrate deploy` against Supabase, create the Render service + env vars, point Render's health check at `/health`.
-- [ ] **Step 6 — Netlify:** fill in the proxy URL in `apps/web/netlify.toml`, deploy, add the Netlify domain to Google OAuth authorized origins.
+- [x] **Step 5 — Render:** Dockerfile written from scratch, image builds from the repo root, container verified locally (`/health` + a real Supabase query), API deployed with env vars and a `/health` health check. Pre-deploy commands are paid-only on Render, so migrations run manually with `prisma migrate deploy` from `apps/api` **before** pushing code that needs them.
+- [ ] **Step 6 — Netlify (nearly done):** site live at `sideout-app.netlify.app`, `/api/*` proxy to Render verified from a browser with no console errors. Remaining: add the Netlify domain to Google OAuth authorized JavaScript origins, set `CORS_ORIGIN` on Render to the Netlify domain, and test signup → login → create lobby on the deployed site.
 - [ ] **Step 7 — Scaling with Redis (post-deploy, learning exercise):** load-test an endpoint to get a baseline (e.g. `autocannon`/`k6`), add cache-aside caching with TTL + invalidation (e.g. open lobby list), re-measure; then Redis-backed rate limiting. Goal is interview-ready scaling skills, not real traffic needs.
 
 ## Dev commands (`apps/api`)
@@ -149,7 +158,27 @@ dependencies never enter the API image.
 Run it locally (needs all env vars `config/env.ts` requires):
 
 ```
-docker run --rm -p 3002:3001 -e NODE_ENV=production -e DATABASE_URL=... \
-  -e DIRECT_URL=... -e JWT_SECRET=... -e GOOGLE_CLIENT_ID=... \
-  -e CORS_ORIGIN=... tournament-api
+docker run --rm -p 3002:3001 --env-file apps/api/.env tournament-api
 ```
+
+`--env-file` is stricter than `dotenv`: keys may not have spaces around `=`, so
+`NODE_ENV =value` is rejected. It also passes dev values, including
+`NODE_ENV=development`.
+
+## Netlify (frontend)
+
+`apps/web/netlify.toml` is the source of truth; it beats the dashboard fields.
+`base = "apps/web"` must be declared **in the file**, not only in the UI —
+without it Netlify resolves `publish` against the repo root and the build fails.
+With `base` set, `publish` is relative to it, so it stays `dist/web/browser`.
+Functions directory must be empty (there are no serverless functions).
+
+The frontend takes **no environment variables**: Angular compiles
+`environment.production.ts` into the bundle, so everything in it is public.
+That is why `apiBaseUrl` is the relative path `/api` and why no secrets belong
+there.
+
+The `/api/*` proxy exists so the browser only makes same-origin requests, which
+is what keeps the `sameSite=strict` refresh cookie working. A side effect: the
+browser never performs a CORS check against the API, so `CORS_ORIGIN` does not
+affect the deployed frontend.
