@@ -34,3 +34,7 @@ coverage/
 
 # Local throwaway test scaffolding (never commit)
 scratch/
+
+# claude 
+CLAUDE.md
+.claude/
