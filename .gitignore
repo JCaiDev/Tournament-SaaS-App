@@ -38,3 +38,6 @@ scratch/
 # claude 
 CLAUDE.md
 .claude/
+
+# playwright-mcp
+.playwright-mcp/
