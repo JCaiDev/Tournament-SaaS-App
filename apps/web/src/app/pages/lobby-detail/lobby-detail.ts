@@ -23,7 +23,7 @@ export class LobbyDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly lobbyService = inject(LobbyService);
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router)
+  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
   readonly lobby = signal<Lobby | null>(null);
@@ -47,8 +47,7 @@ export class LobbyDetail implements OnInit {
     position: [''],
   });
 
-  private readonly guestNameInput =
-    viewChild<ElementRef<HTMLInputElement>>('guestNameInput');
+  private readonly guestNameInput = viewChild<ElementRef<HTMLInputElement>>('guestNameInput');
 
   // Inline roster edit — id of the row being edited, plus its working form.
   readonly editingId = signal<string | null>(null);
@@ -96,9 +95,7 @@ export class LobbyDetail implements OnInit {
   });
 
   readonly paidCount = computed(() => this.players().filter((p) => p.paid).length);
-  readonly amountCollected = computed(
-    () => this.paidCount() * (this.lobby()?.price ?? 0),
-  );
+  readonly amountCollected = computed(() => this.paidCount() * (this.lobby()?.price ?? 0));
 
   // Team maker — assignments (playerId -> team index) are the single source of truth.
   readonly teamCount = signal(4);
@@ -182,18 +179,21 @@ export class LobbyDetail implements OnInit {
   canDelete(): boolean {
     const user = this.auth.currentUser();
     const lobby = this.lobby();
-    if (!user || !lobby ) return false;
-    return user.id === lobby.host.id || user.role === "ADMIN";
+    if (!user || !lobby) return false;
+    return user.id === lobby.host.id || user.role === 'ADMIN';
   }
 
-  deleteLobby():void {
+  deleteLobby(): void {
     const lobby = this.lobby();
     if (!lobby || !confirm('Delete this lobby? This cannot be undone.')) return;
     this.deleting.set(true);
     this.lobbyService.deleteLobby(lobby.id).subscribe({
       next: () => this.router.navigate(['/']),
-      error: () => { this.deleting.set(false); this.deleteError.set('Could not delete this lobby')}
-    })
+      error: () => {
+        this.deleting.set(false);
+        this.deleteError.set('Could not delete this lobby');
+      },
+    });
   }
 
   // Host or admin may manage the roster.
@@ -299,9 +299,7 @@ export class LobbyDetail implements OnInit {
     this.savingId.set(player.id);
     this.lobbyService.updateLobbyPlayer(lobby.id, player.id, changes).subscribe({
       next: (updated) => {
-        this.players.update((list) =>
-          list.map((p) => (p.id === updated.id ? updated : p)),
-        );
+        this.players.update((list) => list.map((p) => (p.id === updated.id ? updated : p)));
         this.savingId.set(null);
         onDone?.();
       },
@@ -444,7 +442,9 @@ export class LobbyDetail implements OnInit {
 
   // ----- Pools (groups of teams) -----
 
-  readonly poolCount = signal(2);
+  // One pool = everyone plays in a single group (e.g. a round robin).
+  readonly minPools = 1;
+  readonly poolCount = signal(1);
   // teamIndex -> poolIndex
   readonly poolAssignments = signal<Record<number, number>>({});
 
@@ -470,17 +470,15 @@ export class LobbyDetail implements OnInit {
     return teams;
   });
 
-  readonly pooledTeamCount = computed(
-    () => this.teamCount() - this.unassignedTeams().length,
-  );
+  readonly pooledTeamCount = computed(() => this.teamCount() - this.unassignedTeams().length);
 
   raisePools(): void {
-    const max = Math.max(2, this.teamCount());
+    const max = Math.max(this.minPools, this.teamCount());
     this.poolCount.update((n) => Math.min(max, n + 1));
   }
 
   lowerPools(): void {
-    this.poolCount.update((n) => Math.max(2, n - 1));
+    this.poolCount.update((n) => Math.max(this.minPools, n - 1));
   }
 
   generatePools(): void {
@@ -501,7 +499,4 @@ export class LobbyDetail implements OnInit {
   poolLabel(index: number): string {
     return `Pool ${index + 1}`;
   }
-
-
-
 }
