@@ -12,6 +12,7 @@ import {
   UpdatePlayerRequest,
 } from '../../models/lobby';
 import { AuthService } from '../../services/auth.service';
+import { generateTeams } from '../../shared/team-generator/team-generator';
 
 @Component({
   selector: 'app-lobby-detail',
@@ -404,19 +405,11 @@ export class LobbyDetail implements OnInit {
     return this.teamLabel(idx);
   }
 
-  // Auto-distribute everyone into balanced teams; the result stays editable.
+  // Fill the bench into balanced teams; players already on a team stay put.
   generateTeams(): void {
-    const pool = [...this.rosterPlayers()];
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    // Group by position, then deal round-robin so roles spread and sizes stay even.
-    pool.sort((a, b) => (a.position || '~').localeCompare(b.position || '~'));
-    const count = Math.max(1, this.teamCount());
-    const map: Record<string, number> = {};
-    pool.forEach((p, i) => (map[p.id] = i % count));
-    this.assignments.set(map);
+    this.assignments.set(
+      generateTeams(this.rosterPlayers(), this.teamCount(), this.assignments()),
+    );
   }
 
   assignPlayer(playerId: string, teamIndex: number): void {

@@ -270,8 +270,13 @@
           </div>
 
           <div class="tm-actions">
-            <button type="button" class="btn btn-primary" (click)="generateTeams()">
-              {{ placedCount() ? 'Reshuffle' : 'Auto-generate teams' }}
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="generateTeams()"
+              [disabled]="!unassignedPlayers().length"
+            >
+              {{ placedCount() ? 'Fill from bench' : 'Auto-generate teams' }}
             </button>
             @if (placedCount()) {
               <button type="button" class="btn btn-ghost" (click)="clearTeams()">Clear all</button>
@@ -279,7 +284,9 @@
           </div>
 
           <p class="field-hint">
-            Auto-generate balanced teams, then fine-tune — use a player’s menu to move them, or × to bench them.
+            Place any groups first, then auto-generate: players already on a team stay put and the
+            bench fills in evenly. Use a player’s menu to move them, × to bench them, or Clear all to
+            start over.
           </p>
 
           <div class="team-grid">
