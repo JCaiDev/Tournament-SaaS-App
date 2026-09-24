@@ -14,8 +14,57 @@
 
   <div class="dt-part dt-time-part">
     <span class="dt-icon" aria-hidden="true">🕒</span>
+
+    <!-- Desktop: short custom list that opens at the selected time, or 5 PM. -->
+    <button
+      #trigger
+      type="button"
+      class="dt-input dt-trigger"
+      [class.dt-placeholder]="!selectedLabel()"
+      [disabled]="disabled()"
+      aria-haspopup="listbox"
+      [attr.aria-expanded]="open()"
+      [attr.aria-controls]="listId"
+      [attr.aria-label]="'Time: ' + (selectedLabel() || 'not set')"
+      (click)="toggleList()"
+      (keydown)="onTriggerKeydown($event)"
+      (blur)="onTriggerBlur()"
+    >
+      {{ selectedLabel() || 'Select time' }}
+    </button>
+
+    @if (open()) {
+      <ul
+        #listbox
+        class="dt-list"
+        role="listbox"
+        tabindex="-1"
+        [id]="listId"
+        aria-label="Time"
+        [attr.aria-activedescendant]="activeIndex() >= 0 ? optionId(activeIndex()) : null"
+        (keydown)="onListKeydown($event)"
+        (focusout)="onListFocusOut($event)"
+      >
+        @for (opt of timeOptions(); track opt.value; let i = $index) {
+          <li
+            role="option"
+            class="dt-option"
+            [id]="optionId(i)"
+            [class.dt-option-active]="i === activeIndex()"
+            [class.dt-option-selected]="opt.value === time()"
+            [attr.aria-selected]="opt.value === time()"
+            (mousedown)="$event.preventDefault()"
+            (click)="choose(i)"
+          >
+            {{ opt.label }}
+          </li>
+        }
+      </ul>
+    }
+
+    <!-- Phones: the native picker is easier to use by touch. -->
     <select
-      class="dt-input dt-select"
+      class="dt-input dt-select dt-native"
       [value]="time()"
       [disabled]="disabled()"
       (change)="onTimeInput($any($event.target).value)"

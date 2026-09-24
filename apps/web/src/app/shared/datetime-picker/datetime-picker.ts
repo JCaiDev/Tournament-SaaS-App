@@ -1,5 +1,22 @@
-import { Component, computed, forwardRef, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  forwardRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { anchorIndex, nextIndex } from './time-list';
+
+// About 8 rows fit in the open list (see --dt-visible-rows in the CSS).
+const PAGE_SIZE = 8;
+
+// Two pickers can share a page (start + end time), so each needs its own ids.
+let nextPickerId = 0;
 
 interface TimeOption {
   value: string; // "HH:mm"
@@ -36,6 +53,20 @@ export class DatetimePicker implements ControlValueAccessor {
     }
     return BASE_TIME_OPTIONS;
   });
+
+  readonly selectedLabel = computed(
+    () => this.timeOptions().find((o) => o.value === this.time())?.label ?? '',
+  );
+
+  // Desktop dropdown state. Phones use the native <select> instead (see the CSS).
+  readonly open = signal(false);
+  readonly activeIndex = signal(-1);
+  readonly listId = `dt-time-list-${nextPickerId++}`;
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+  private readonly trigger = viewChild<ElementRef<HTMLButtonElement>>('trigger');
+  private readonly listbox = viewChild<ElementRef<HTMLUListElement>>('listbox');
 
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
@@ -75,6 +106,92 @@ export class DatetimePicker implements ControlValueAccessor {
 
   markTouched(): void {
     this.onTouched();
+  }
+
+  optionId(index: number): string {
+    return `${this.listId}-${index}`;
+  }
+
+  toggleList(): void {
+    if (this.open()) this.closeList(true);
+    else this.openList();
+  }
+
+  openList(): void {
+    if (this.disabled()) return;
+    const values = this.timeOptions().map((o) => o.value);
+    this.activeIndex.set(anchorIndex(values, this.time()));
+    this.open.set(true);
+
+    // The list doesn't exist until Angular renders it, so scroll after that render.
+    afterNextRender(
+      () => {
+        const list = this.listbox()?.nativeElement;
+        if (!list) return;
+        list.focus();
+        const anchor = list.children[this.activeIndex()] as HTMLElement | undefined;
+        // Put the anchor row at the top of the visible window.
+        if (anchor) list.scrollTop = anchor.offsetTop;
+      },
+      { injector: this.injector },
+    );
+  }
+
+  closeList(returnFocus: boolean): void {
+    if (!this.open()) return;
+    this.open.set(false);
+    this.markTouched();
+    if (returnFocus) this.trigger()?.nativeElement.focus();
+  }
+
+  choose(index: number): void {
+    const option = this.timeOptions()[index];
+    if (option) this.onTimeInput(option.value);
+    this.closeList(true);
+  }
+
+  // Tabbing past the closed button counts as "touched"; opening the list doesn't.
+  onTriggerBlur(): void {
+    if (!this.open()) this.markTouched();
+  }
+
+  onTriggerKeydown(event: KeyboardEvent): void {
+    // Enter and Space already "click" a button; arrows should open it too.
+    if (!this.open() && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+      event.preventDefault();
+      this.openList();
+    }
+  }
+
+  onListKeydown(event: KeyboardEvent): void {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.choose(this.activeIndex());
+        return;
+      case 'Escape':
+        event.preventDefault();
+        this.closeList(true);
+        return;
+      case 'Tab':
+        this.closeList(false);
+        return;
+    }
+
+    const next = nextIndex(this.activeIndex(), event.key, this.timeOptions().length, PAGE_SIZE);
+    if (next === null) return;
+    event.preventDefault(); // stop the arrow keys from also scrolling the page
+    this.activeIndex.set(next);
+    const row = this.listbox()?.nativeElement.children[next] as HTMLElement | undefined;
+    row?.scrollIntoView({ block: 'nearest' });
+  }
+
+  // Close when focus leaves the picker entirely (click outside, or tab away).
+  // Moving focus back to our own trigger button is handled by toggleList instead.
+  onListFocusOut(event: FocusEvent): void {
+    const next = event.relatedTarget as Node | null;
+    if (!next || !this.host.nativeElement.contains(next)) this.closeList(false);
   }
 
   private emit(): void {
