@@ -91,6 +91,77 @@
   pointer-events: none;
 }
 
+/* ----- Desktop time dropdown ----- */
+
+.dt-trigger {
+  text-align: left;
+  cursor: pointer;
+  padding-right: 1.4rem;
+}
+
+.dt-placeholder {
+  color: var(--color-muted);
+}
+
+.dt-list {
+  --dt-row-height: 2.25rem;
+  --dt-visible-rows: 8; /* keep in sync with PAGE_SIZE in datetime-picker.ts */
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: calc(var(--dt-row-height) * var(--dt-visible-rows));
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+}
+
+.dt-list:focus {
+  outline: none;
+}
+
+.dt-option {
+  display: flex;
+  align-items: center;
+  height: var(--dt-row-height);
+  padding: 0 0.8rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--color-foreground);
+}
+
+.dt-option:hover,
+.dt-option-active {
+  background: rgba(35, 87, 137, 0.1);
+}
+
+.dt-option-selected {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* Touch screens get the native picker; mouse and keyboard get the custom list. */
+.dt-native {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .dt-native {
+    display: block;
+  }
+
+  .dt-trigger,
+  .dt-list {
+    display: none;
+  }
+}
+
 .dt-disabled {
   opacity: 0.6;
 }
