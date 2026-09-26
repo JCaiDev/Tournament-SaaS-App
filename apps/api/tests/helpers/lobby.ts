@@ -21,3 +21,11 @@ export async function seedLobby(hostId: string, overrides = {}) {
     data: { ...validLobbyBody(), hostId, ...overrides },
   })
 }
+
+// creates a guest LobbyPlayer row directly in the DB, so PATCH/DELETE tests
+// don't depend on the POST endpoint working
+export async function seedGuest(lobbyId: string, guestName = 'Bob') {
+  return prisma.lobbyPlayer.create({
+    data: { lobbyId, guestName },
+  })
+}
