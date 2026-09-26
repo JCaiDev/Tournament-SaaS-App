@@ -1,33 +1,37 @@
-import { prisma } from '../prisma';                                 
+import { prisma } from '../prisma';
 import { AppError } from '../errors/AppErrors';
-import { AddPlayerInput, UpdatePlayerInput } from "./lobby-player.schemas"
-import { Role } from '@prisma/client'
-import { AuthUser } from './../types/auth'
+import { AddPlayerInput, UpdatePlayerInput } from './lobby-player.schemas';
+import { Role } from '@prisma/client';
+import { AuthUser } from './../types/auth';
 
-const assertLobbyManager = async (lobbyId: string, actor:AuthUser) => {
+const assertLobbyManager = async (lobbyId: string, actor: AuthUser) => {
     const lobby = await prisma.lobby.findUnique({
         where: { id: lobbyId },
         select: {
             hostId: true,
-        }
-    })
+        },
+    });
 
-    if (!lobby) throw new AppError("Lobby not found", 404)
-    const isManager = ( lobby.hostId === actor.id || actor.role === Role.ADMIN )
-    if (!isManager) throw new AppError("Forbidden", 403)
+    if (!lobby) throw new AppError('Lobby not found', 404);
+    const isManager = lobby.hostId === actor.id || actor.role === Role.ADMIN;
+    if (!isManager) throw new AppError('Forbidden', 403);
+};
 
-}
-
-const assertPlayerInLobby = async (lobbyId:string, playerId:string) => {
+const assertPlayerInLobby = async (lobbyId: string, playerId: string) => {
     const player = await prisma.lobbyPlayer.findUnique({
-        where: { id: playerId},
-        select: { lobbyId: true}
-    })
-    if (!player || player.lobbyId !== lobbyId) throw new AppError("Player not found", 404)
-}
+        where: { id: playerId },
+        select: { lobbyId: true },
+    });
+    if (!player || player.lobbyId !== lobbyId)
+        throw new AppError('Player not found', 404);
+};
 
-export const addLobbyPlayerService = async (lobbyId: string, actor: AuthUser,playerInput: AddPlayerInput, ) => {
-    await assertLobbyManager(lobbyId, actor)
+export const addLobbyPlayerService = async (
+    lobbyId: string,
+    actor: AuthUser,
+    playerInput: AddPlayerInput,
+) => {
+    await assertLobbyManager(lobbyId, actor);
 
     return prisma.lobbyPlayer.create({
         data: {
@@ -37,11 +41,10 @@ export const addLobbyPlayerService = async (lobbyId: string, actor: AuthUser,pla
             position: playerInput.position ?? '',
         },
         include: {
-            user: { select: { id: true, name: true, pictureUrl: true } }
-        }
-    })
-    
-}
+            user: { select: { id: true, name: true, pictureUrl: true } },
+        },
+    });
+};
 
 export const getLobbyPlayersService = async (lobbyId: string) => {
     return prisma.lobbyPlayer.findMany({
@@ -49,29 +52,38 @@ export const getLobbyPlayersService = async (lobbyId: string) => {
         orderBy: { joinedAt: 'asc' },
         include: {
             user: {
-                select: { id: true, name: true, pictureUrl:true }
-            }
-        }
-     })
-}
+                select: { id: true, name: true, pictureUrl: true },
+            },
+        },
+    });
+};
 
-export const updateLobbyPlayerService = async (lobbyId:string, playerId: string, actor:AuthUser, data: UpdatePlayerInput) => {
-    await assertLobbyManager(lobbyId, actor)
-    await assertPlayerInLobby(playerId, lobbyId)
+export const updateLobbyPlayerService = async (
+    lobbyId: string,
+    playerId: string,
+    actor: AuthUser,
+    data: UpdatePlayerInput,
+) => {
+    await assertLobbyManager(lobbyId, actor);
+    await assertPlayerInLobby(lobbyId, playerId);
 
     return prisma.lobbyPlayer.update({
         where: { id: playerId },
         data,
         include: {
-            user: { select: { id: true, name: true, pictureUrl: true } }
-        }
-    })
-}
+            user: { select: { id: true, name: true, pictureUrl: true } },
+        },
+    });
+};
 
-export const removeLobbyPlayerService = async (lobbyId: string, playerId: string, actor:AuthUser ) => {
-    await assertLobbyManager(lobbyId, actor)
-    await assertPlayerInLobby(playerId, lobbyId)
+export const removeLobbyPlayerService = async (
+    lobbyId: string,
+    playerId: string,
+    actor: AuthUser,
+) => {
+    await assertLobbyManager(lobbyId, actor);
+    await assertPlayerInLobby(lobbyId, playerId);
     return prisma.lobbyPlayer.delete({
-        where: { id: playerId }
-    })
-}
+        where: { id: playerId },
+    });
+};
