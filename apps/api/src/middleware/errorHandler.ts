@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
-import { AppError } from "../errors/AppErrors";
-import { logError } from "../utils/logger";
-import { ENV } from "../config/env";
+import { Request, Response, NextFunction } from 'express';
+import { AppError } from '../errors/AppErrors';
+import { logError } from '../utils/logger';
+import { ENV } from '../config/env';
 
 export function errorHandler(
     err: Error,
@@ -15,10 +15,10 @@ export function errorHandler(
                 message: err.message,
                 statusCode: err.statusCode,
             },
-        }
+        };
 
-        if (ENV.NODE_ENV !== "production" && err.details !== undefined) {
-            (payload.error as Record<string, unknown>).details = err.details
+        if (ENV.NODE_ENV !== 'production' && err.details !== undefined) {
+            (payload.error as Record<string, unknown>).details = err.details;
         }
 
         return res.status(err.statusCode).json(payload);
@@ -26,11 +26,11 @@ export function errorHandler(
     logError(err);
 
     const message =
-        ENV.NODE_ENV === "production"
-            ? "Internal server error"
+        ENV.NODE_ENV === 'production'
+            ? 'Internal server error'
             : err instanceof Error
-                ? err.message
-                : String(err);
+              ? err.message
+              : String(err);
 
     return res.status(500).json({
         error: {

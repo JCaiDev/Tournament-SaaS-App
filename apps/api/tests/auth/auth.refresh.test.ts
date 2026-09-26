@@ -5,7 +5,7 @@ import { prisma } from '../../src/prisma';
 import crypto, { hash } from 'crypto';
 import { seedUser } from '../helpers/users';
 import { hashToken } from '../../src/utils/crypto';
-import { beforeEach, afterAll, describe, expect, it } from '@jest/globals'
+import { beforeEach, afterAll, describe, expect, it } from '@jest/globals';
 
 beforeEach(resetDb);
 afterAll(disconnectDb);
