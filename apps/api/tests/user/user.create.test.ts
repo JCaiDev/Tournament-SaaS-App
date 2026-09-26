@@ -1,7 +1,7 @@
 import { createUser } from '../../src/user/user.services';
 import { prisma } from '../../src/prisma';
 import argon2 from 'argon2';
-import { Role } from '@prisma/client'
+import { Role } from '@prisma/client';
 import {
     jest,
     describe,
@@ -89,17 +89,16 @@ describe('createUser', () => {
             name: 'Test User',
             birthDate: new Date('1992-08-1'),
             role: Role.PLAYER,
-        }
+        };
 
         jest.mocked(prisma.user.findUnique).mockResolvedValueOnce({
             id: 'existing-id',
             email: mockInput.email,
-        } as any );
+        } as any);
         await expect(createUser(mockInput)).rejects.toThrow(
-            'This email is already registered. Please log in with your email'
-        )
+            'This email is already registered. Please log in with your email',
+        );
         expect(argon2.hash).not.toHaveBeenCalled();
         expect(prisma.user.create).not.toHaveBeenCalled();
-  
     });
-})
+});

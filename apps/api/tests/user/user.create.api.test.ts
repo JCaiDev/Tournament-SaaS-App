@@ -3,7 +3,14 @@ import { app } from '../../src/app';
 import { Role } from '@prisma/client';
 import { resetDb, disconnectDb } from '../helpers/db';
 import { seedUser } from '../helpers/users';
-import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
+import {
+    describe,
+    it,
+    expect,
+    beforeAll,
+    afterAll,
+    afterEach,
+} from '@jest/globals';
 
 describe('POST /users (Create User API)', () => {
     // 1. setup & teardown using helps
@@ -17,7 +24,7 @@ describe('POST /users (Create User API)', () => {
         await disconnectDb();
     });
 
-    it("Happy Path: should return 201 and create a user", async () => {
+    it('Happy Path: should return 201 and create a user', async () => {
         const validPaylod = {
             email: 'api_test@test.com',
             password: 'Password123!',
@@ -26,15 +33,13 @@ describe('POST /users (Create User API)', () => {
         };
 
         // fire a fake HTTP request at your Express App
-        const response = await request(app)
-            .post('/users')
-            .send(validPaylod)
+        const response = await request(app).post('/users').send(validPaylod);
 
         expect(response.status).toBe(201);
         expect(response.body.message).toBe('User succesfully created');
         expect(response.body.user).toHaveProperty('id');
         expect(response.body.user.email).toBe(validPaylod.email);
-    })
+    });
 
     it('Unhappy Path: should return 409 if email already registered', async () => {
         // 1. put a user in the database instantly using a helper function
@@ -52,7 +57,9 @@ describe('POST /users (Create User API)', () => {
             .send(duplicatePayload);
 
         expect(response.status).toBe(409);
-        expect(response.body.error.message).toBe('This email is already registered. Please log in with your email');
+        expect(response.body.error.message).toBe(
+            'This email is already registered. Please log in with your email',
+        );
     });
 
     it('Unhappy Path: should return 400 if email format is invalid', async () => {
@@ -62,15 +69,13 @@ describe('POST /users (Create User API)', () => {
             name: 'noEmail User',
             birthDate: '2005-04-25',
         };
-        const response = await request(app)
-            .post('/users')
-            .send(badPayload);
-    
+        const response = await request(app).post('/users').send(badPayload);
+
         expect(response.status).toBe(400);
         expect(response.body.error.message).toBe('Invalid request body');
     });
 
-        it('Unhappy Path: should return 400 if Request Body does not match schema', async () => {
+    it('Unhappy Path: should return 400 if Request Body does not match schema', async () => {
         const badPayload = {
             email: 'sneaky@gmail.com',
             password: 'Password123!',
@@ -78,10 +83,8 @@ describe('POST /users (Create User API)', () => {
             birthDate: '2005-04-25',
             role: Role.ADMIN,
         };
-        const response = await request(app)
-            .post('/users')
-            .send(badPayload);
-    
+        const response = await request(app).post('/users').send(badPayload);
+
         expect(response.status).toBe(400);
         expect(response.body.error.message).toBe('Invalid request body');
     });
