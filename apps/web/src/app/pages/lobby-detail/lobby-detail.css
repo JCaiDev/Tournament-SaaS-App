@@ -125,6 +125,26 @@
   font-size: 1.05rem;
 }
 
+/* Edit / Delete buttons under the host block (hosts and admins only). */
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+/* Non-managers get an empty footer; don't leave a gap for it. */
+.action-bar:empty {
+  display: none;
+}
+
+/* A delete error takes its own row below the buttons. */
+.action-bar .field-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 /* ---------- States ---------- */
 
 .state {
@@ -969,7 +989,8 @@ button.tag:disabled {
     justify-content: space-between;
   }
 
-  .tm-actions .btn {
+  .tm-actions .btn,
+  .action-bar .btn {
     flex: 1;
     min-height: 44px;
   }
