@@ -58,7 +58,7 @@ describe('POST /users (Create User API)', () => {
 
         expect(response.status).toBe(409);
         expect(response.body.error.message).toBe(
-            'This email is already registered. Please log in with your email',
+            "That email is already registered. Log in, or use Sign in with Google if that's how you signed up.",
         );
     });
 

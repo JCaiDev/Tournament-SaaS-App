@@ -50,7 +50,7 @@ export const createUser = async (data: CreateUserInput) => {
 
     if (existingUser) {
         throw new AppError(
-            'This email is already registered. Please log in with your email',
+            `That email is already registered. Log in, or use Sign in with Google if that's how you signed up.`,
             409,
         );
     }
