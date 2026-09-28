@@ -96,7 +96,7 @@ describe('createUser', () => {
             email: mockInput.email,
         } as any);
         await expect(createUser(mockInput)).rejects.toThrow(
-            'This email is already registered. Please log in with your email',
+            "That email is already registered. Log in, or use Sign in with Google if that's how you signed up.",
         );
         expect(argon2.hash).not.toHaveBeenCalled();
         expect(prisma.user.create).not.toHaveBeenCalled();
