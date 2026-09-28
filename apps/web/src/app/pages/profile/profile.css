@@ -88,6 +88,18 @@
   font-weight: 400;
 }
 
+.btn-danger {
+  background: var(--color-destructive);
+  color: #fff;
+}
+.btn-danger:hover {
+  background: #b91c1c;
+}
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .danger-zone {
   border: 1px solid rgba(220, 38, 38, 0.3);
   border-radius: var(--radius-md);

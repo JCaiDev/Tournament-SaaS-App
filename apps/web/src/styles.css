@@ -133,18 +133,6 @@ a {
   border-color: var(--color-primary);
 }
 
-.btn-danger {
-  background: var(--color-destructive);
-  color: #fff;
-}
-.btn-danger:hover {
-  background: #b91c1c;
-}
-.btn-danger:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .badge {
   display: inline-flex;
   align-items: center;
