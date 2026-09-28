@@ -72,7 +72,7 @@ export class Signup {
         this.submitting.set(false);
         if (err.status === 409) {
           this.serverError.set(
-            'That email is already registered. Try logging in instead.'
+            "That email is already registered. Log in, or use Sign in with Google if that's how you signed up."
           );
         } else if (err.status === 400) {
           this.serverError.set('Please check your details and try again.');

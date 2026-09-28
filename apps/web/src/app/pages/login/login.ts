@@ -55,7 +55,9 @@ export class Login {
       error: (err: HttpErrorResponse) => {
         this.submitting.set(false);
         if (err.status === 401) {
-          this.serverError.set('Incorrect email or password.');
+          this.serverError.set(
+            'Incorrect email or password. If you signed up with Google, use Sign in with Google.'
+          );
         } else {
           this.serverError.set('Something went wrong. Please try again later.');
         }
