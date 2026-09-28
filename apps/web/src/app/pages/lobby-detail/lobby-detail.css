@@ -129,9 +129,9 @@
 .action-bar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-top: var(--space-lg);
+  align-items: stretch;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
 }
 
 /* Non-managers get an empty footer; don't leave a gap for it. */
@@ -992,6 +992,7 @@ button.tag:disabled {
   .tm-actions .btn,
   .action-bar .btn {
     flex: 1;
+    justify-content: center;
     min-height: 44px;
   }
 
