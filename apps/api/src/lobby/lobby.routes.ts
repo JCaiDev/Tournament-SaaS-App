@@ -6,8 +6,11 @@ import {
     lobbyParamSchema,
     updateLobbySchema,
 } from './lobby.schemas';
-import { requireAuth, requireRole } from '../middleware/auth.middleware';
-import { Role } from '@prisma/client';
+import {
+    requireAuth,
+    requireRole,
+    ORGANIZER_ROLES,
+} from '../middleware/auth.middleware';
 import {
     validateBody,
     validateParams,
@@ -24,7 +27,7 @@ router.get('/:id', validateParams(lobbyParamSchema), LobbyController.getLobby);
 router.post(
     '/',
     requireAuth,
-    requireRole(Role.HOST, Role.ADMIN),
+    requireRole(...ORGANIZER_ROLES),
     validateBody(createLobbySchema),
     LobbyController.createLobby,
 );
@@ -32,7 +35,7 @@ router.post(
 router.patch(
     '/:id',
     requireAuth,
-    requireRole(Role.HOST, Role.ADMIN),
+    requireRole(...ORGANIZER_ROLES),
     validateParams(lobbyParamSchema),
     validateBody(updateLobbySchema),
     LobbyController.updateLobby,
@@ -41,7 +44,7 @@ router.patch(
 router.delete(
     '/:id',
     requireAuth,
-    requireRole(Role.HOST, Role.ADMIN),
+    requireRole(...ORGANIZER_ROLES),
     validateParams(lobbyParamSchema),
     LobbyController.deleteLobby,
 );

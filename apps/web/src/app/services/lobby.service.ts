@@ -29,7 +29,7 @@ export class LobbyService {
     if (this.useMock) this.mock.ensureDemoSession();
   }
 
-  /** POST /lobbies - HOST/ADMIN only (enforced by backend) */
+  /** POST /lobbies - ORGANIZER_ROLES only (enforced by backend) */
   createLobby(data: CreateLobbyRequest) : Observable<Lobby> {
     if (this.useMock) return this.mock.createLobby(data);
     return this.http
@@ -74,7 +74,7 @@ export class LobbyService {
       .pipe(map((res) => res.players));
   }
 
-  /** POST /lobbies/:lobbyId/players — HOST/ADMIN only (enforced by backend). */
+  /** POST /lobbies/:lobbyId/players — ORGANIZER_ROLES only (enforced by backend). */
   addLobbyPlayer(lobbyId: string, data: AddPlayerRequest): Observable<LobbyPlayer> {
     if (this.useMock) return this.mock.addLobbyPlayer(lobbyId, data);
     return this.http
@@ -82,7 +82,7 @@ export class LobbyService {
       .pipe(map((res) => res.player));
   }
 
-  /** PATCH /lobbies/:lobbyId/players/:playerId — HOST/ADMIN only. */
+  /** PATCH /lobbies/:lobbyId/players/:playerId — ORGANIZER_ROLES only. */
   updateLobbyPlayer(
     lobbyId: string,
     playerId: string,
@@ -94,7 +94,7 @@ export class LobbyService {
       .pipe(map((res) => res.player));
   }
 
-  /** DELETE /lobbies/:lobbyId/players/:playerId — HOST/ADMIN only. */
+  /** DELETE /lobbies/:lobbyId/players/:playerId — ORGANIZER_ROLES only. */
   removeLobbyPlayer(lobbyId: string, playerId: string): Observable<void> {
     if (this.useMock) return this.mock.removeLobbyPlayer(lobbyId, playerId);
     return this.http.delete<void>(`${this.baseUrl}/${lobbyId}/players/${playerId}`);

@@ -1,6 +1,9 @@
 import { Router } from 'express';
-import { Role } from '@prisma/client';
-import { requireAuth, requireRole } from '../middleware/auth.middleware';
+import {
+    requireAuth,
+    requireRole,
+    ORGANIZER_ROLES,
+} from '../middleware/auth.middleware';
 import { validateBody, validateParams } from '../middleware/validate';
 import {
     lobbyIdParamSchema,
@@ -21,7 +24,7 @@ router.get(
 router.post(
     '/:lobbyId/players',
     requireAuth,
-    requireRole(Role.HOST, Role.ADMIN),
+    requireRole(...ORGANIZER_ROLES),
     validateParams(lobbyIdParamSchema),
     validateBody(addLobbyPlayerSchema),
     PlayerController.addPlayer,
@@ -30,7 +33,7 @@ router.post(
 router.patch(
     '/:lobbyId/players/:playerId',
     requireAuth,
-    requireRole(Role.HOST, Role.ADMIN),
+    requireRole(...ORGANIZER_ROLES),
     validateParams(lobbyPlayerParamSchema),
     validateBody(updatePlayerSchema),
     PlayerController.updatePlayer,
@@ -39,7 +42,7 @@ router.patch(
 router.delete(
     '/:lobbyId/players/:playerId',
     requireAuth,
-    requireRole(Role.HOST, Role.ADMIN),
+    requireRole(...ORGANIZER_ROLES),
     validateParams(lobbyPlayerParamSchema),
     PlayerController.removePlayer,
 );

@@ -63,6 +63,23 @@ describe('POST /lobbies (Create Lobby)', () => {
         expect(res.body.lobby.host).not.toHaveProperty('email');
     });
 
+    // Expand phase of HOST -> ORGANIZER: both roles must pass requireRole.
+    // The HOST test above guards backward compatibility; this one the new role.
+    it('Happy Path: an ORGANIZER creates a lobby -> 201', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+
+        // ACT
+        const res = await request(app)
+            .post('/lobbies')
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send(validLobbyBody());
+
+        // ASSERT
+        expect(res.status).toBe(201);
+        expect(res.body.lobby.host.id).toBe(organizer.id);
+    });
+
     // Unauthorized: User is not a host, reutrn 401
     // POST /lobbies with NO Authorization header and a valid body.
     it('Unauthorized: not logged in — no/invalid token -> 401', async () => {
