@@ -41,46 +41,29 @@ describe('POST /lobbies (Create Lobby)', () => {
     });
 
     // ---------- WORKED EXAMPLE: happy path ----------
-    it('Happy Path: a HOST creates a lobby -> 201 with a public lobby', async () => {
+    it('Happy Path: an ORGANIZER creates a lobby -> 201 with a public lobby', async () => {
         // ARRANGE
         // Must seed a REAL user row: createLobbyService stamps hostId from the
         // token, and Lobby.hostId is a foreign key -> the user must exist in the DB.
-        const host = await seedUser();
+        const organizer = await seedUser();
 
         // ACT
         const res = await request(app)
             .post('/lobbies')
-            // The token's ROLE (HOST) is what requireRole checks — not the DB row.
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST))
+            // The token's ROLE (ORGANIZER) is what requireRole checks — not the DB row.
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
             .send(validLobbyBody());
 
         // ASSERT
         expect(res.status).toBe(201);
         expect(res.body.lobby.lobbyName).toBe('Sunday Intermediate Drop-In');
         // hostId comes from the TOKEN, never the body — this proves that decision:
-        expect(res.body.lobby.host.id).toBe(host.id);
+        expect(res.body.lobby.host.id).toBe(organizer.id);
         // publicLobbySelect exposes only public host fields — no private data leaked:
         expect(res.body.lobby.host).not.toHaveProperty('email');
     });
 
-    // Expand phase of HOST -> ORGANIZER: both roles must pass requireRole.
-    // The HOST test above guards backward compatibility; this one the new role.
-    it('Happy Path: an ORGANIZER creates a lobby -> 201', async () => {
-        // ARRANGE
-        const organizer = await seedUser();
-
-        // ACT
-        const res = await request(app)
-            .post('/lobbies')
-            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
-            .send(validLobbyBody());
-
-        // ASSERT
-        expect(res.status).toBe(201);
-        expect(res.body.lobby.host.id).toBe(organizer.id);
-    });
-
-    // Unauthorized: User is not a host, reutrn 401
+    // Unauthorized: not logged in, return 401
     // POST /lobbies with NO Authorization header and a valid body.
     it('Unauthorized: not logged in — no/invalid token -> 401', async () => {
         // ACT
@@ -104,11 +87,11 @@ describe('POST /lobbies (Create Lobby)', () => {
     });
 
     // TODO 3 — Bad Request:
-    // Use a HOST token but a body that breaks the schema — e.g. endTime BEFORE
+    // Use an ORGANIZER token but a body that breaks the schema — e.g. endTime BEFORE
     // startTime (exercises your .refine), or omit lobbyName.
     // Q: why does requireRole pass but validateBody fail here? (Think middleware order.)
     it('Bad Request: invalid body -> 400', async () => {
-        const host = await seedUser();
+        const organizer = await seedUser();
 
         const invalidLobbyData = {
             endTime: new Date(Date.now() - 3600),
@@ -118,8 +101,8 @@ describe('POST /lobbies (Create Lobby)', () => {
         // ACT
         const res = await request(app)
             .post('/lobbies')
-            // The token's ROLE (HOST) is what requireRole checks — not the DB row.
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST))
+            // The token's ROLE (ORGANIZER) is what requireRole checks — not the DB row.
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
             .send(invalidLobbyData);
 
         // ASSERT

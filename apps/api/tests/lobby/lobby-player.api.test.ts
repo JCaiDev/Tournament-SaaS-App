@@ -25,15 +25,15 @@ describe('POST /lobbies/:lobbyId/players (Add Player)', () => {
         await disconnectDb();
     });
 
-    it('Happy Path: host adds a guest -> 201 with the player', async () => {
+    it('Happy Path: organizer adds a guest -> 201 with the player', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         // ACT
         const res = await request(app)
             .post(`/lobbies/${lobby.id}/players`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST))
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
             .send({ guestName: 'Bob' });
 
         // ASSERT
@@ -44,8 +44,8 @@ describe('POST /lobbies/:lobbyId/players (Add Player)', () => {
 
     it('Sad Path: not logged in -> 401', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         // ACT
         const res = await request(app)
@@ -60,13 +60,13 @@ describe('POST /lobbies/:lobbyId/players (Add Player)', () => {
 
     it('Sad Path: wrong role -> 403', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         // ACT
         const res = await request(app)
             .post(`/lobbies/${lobby.id}/players`)
-            .set('Authorization', makeAuthHeader(host.id, Role.PLAYER))
+            .set('Authorization', makeAuthHeader(organizer.id, Role.PLAYER))
             .send({ guestName: 'Bob' });
 
         // ASSERT
@@ -75,13 +75,16 @@ describe('POST /lobbies/:lobbyId/players (Add Player)', () => {
         expect(res.body).not.toHaveProperty('player');
     });
     it('Sad Path: not the owner -> 403', async () => {
-        const ownerHost = await seedUser();
-        const otherHost = await seedUser();
-        const lobby = await seedLobby(ownerHost.id);
+        const ownerOrganizer = await seedUser();
+        const otherOrganizer = await seedUser();
+        const lobby = await seedLobby(ownerOrganizer.id);
 
         const res = await request(app)
             .post(`/lobbies/${lobby.id}/players`)
-            .set('Authorization', makeAuthHeader(otherHost.id, Role.HOST))
+            .set(
+                'Authorization',
+                makeAuthHeader(otherOrganizer.id, Role.ORGANIZER),
+            )
             .send({ guestName: 'Lauren' });
 
         expect(res.status).toBe(403);
@@ -90,11 +93,11 @@ describe('POST /lobbies/:lobbyId/players (Add Player)', () => {
     });
 
     it('Sad Path: lobby does not exist -> 404', async () => {
-        const host = await seedUser();
+        const organizer = await seedUser();
 
         const res = await request(app)
-            .post(`/lobbies/${host.id}/players`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST))
+            .post(`/lobbies/${organizer.id}/players`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
             .send({ guestName: 'Lauren' });
 
         expect(res.status).toBe(404);
@@ -102,12 +105,12 @@ describe('POST /lobbies/:lobbyId/players (Add Player)', () => {
         expect(res.body).not.toHaveProperty('lobby');
     });
     it('Sad Path: invalid body => 400', async () => {
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         const res = await request(app)
             .post(`/lobbies/${lobby.id}/players`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST))
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
             .send({});
 
         expect(res.status).toBe(400);

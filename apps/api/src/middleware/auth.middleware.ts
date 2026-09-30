@@ -27,7 +27,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     }
 }
 
-export const ORGANIZER_ROLES = [Role.ADMIN, Role.HOST, Role.ORGANIZER];
+export const ORGANIZER_ROLES = [Role.ADMIN, Role.ORGANIZER];
 
 export function requireRole(...allowedRoles: Role[]) {
     return (req: Request, res: Response, next: NextFunction) => {

@@ -19,15 +19,15 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
 
     // ---------- HAPPY PATHS ----------
 
-    it('Happy Path: Host updates only price and location on own lobby -> 200', async () => {
+    it('Happy Path: Organizer updates only price and location on own lobby -> 200', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         // ACT — send only two fields (partial update)
         const res = await request(app)
             .patch(`/lobbies/${lobby.id}`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST))
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
             .send({ price: 25, location: 'New Sports Complex' });
 
         // ASSERT
@@ -37,14 +37,14 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
         // Other fields should remain unchanged from the seed
         expect(res.body.lobby.lobbyName).toBe('Sunday Intermediate Drop-In');
         expect(res.body.lobby.skillLevel).toBe(SkillLevel.OPEN);
-        // Host should still be the same
-        expect(res.body.lobby.host.id).toBe(host.id);
+        // The lobby's host (owner) should still be the same
+        expect(res.body.lobby.host.id).toBe(organizer.id);
     });
 
     it('Happy Path: ADMIN can update any lobby -> 200', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         // ACT
         const res = await request(app)
@@ -55,16 +55,16 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
         // ASSERT
         expect(res.status).toBe(200);
         expect(res.body.lobby.lobbyName).toBe('Admin Updated Lobby');
-        // host should still be the original host
-        expect(res.body.lobby.host.id).toBe(host.id);
+        // organizer should still be the original organizer
+        expect(res.body.lobby.host.id).toBe(organizer.id);
     });
 
     // ---------- AUTH / ROLE SAD PATHS ----------
 
     it('Sad Path: Not logged in (no token) -> 401', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         // ACT — no Authorization header
         const res = await request(app)
@@ -77,8 +77,8 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
 
     it('Sad Path: PLAYER cannot update a lobby -> 403', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
         const player = await seedUser({ name: 'player' });
 
         // ACT
@@ -91,16 +91,19 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
         expect(res.status).toBe(403);
     });
 
-    it('Sad Path: Host cannot update lobby owned by another host -> 403', async () => {
+    it('Sad Path: Organizer cannot update lobby owned by another organizer -> 403', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
-        const otherHost = await seedUser({ name: 'otherHost' });
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
+        const otherOrganizer = await seedUser({ name: 'otherOrganizer' });
 
         // ACT
         const res = await request(app)
             .patch(`/lobbies/${lobby.id}`)
-            .set('Authorization', makeAuthHeader(otherHost.id, Role.HOST))
+            .set(
+                'Authorization',
+                makeAuthHeader(otherOrganizer.id, Role.ORGANIZER),
+            )
             .send({ price: 10 });
 
         // ASSERT
@@ -131,13 +134,13 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
 
     it('Sad Path: Invalid body (wrong type for skillLevel) -> 400', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         // ACT — skillLevel must be a valid enum value, not a random string
         const res = await request(app)
             .patch(`/lobbies/${lobby.id}`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST))
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
             .send({ skillLevel: 'INVALID_LEVEL' });
 
         // ASSERT
