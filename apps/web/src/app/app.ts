@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { ORGANIZER_ROLES } from './models/lobby';
 
 @Component({
   selector: 'app-root',
@@ -15,6 +16,10 @@ export class App {
 
   readonly user = this.auth.currentUser;
   readonly isLoggedIn = this.auth.isLoggedIn;
+  readonly canOrganize = computed(() => {
+    const role = this.user()?.role;
+    return !!role && ORGANIZER_ROLES.includes(role);
+  });
 
   logout(): void {
     this.auth.logout();
