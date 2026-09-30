@@ -28,16 +28,16 @@ describe('PATCH /lobbies/:lobbyId/players/:playerId (Update Player)', () => {
 
     // Regression: assertPlayerInLobby was called with (playerId, lobbyId),
     // so every update returned 404 "Player not found".
-    it('Happy Path: host updates a guest in their own lobby -> 200', async () => {
+    it('Happy Path: organizer updates a guest in their own lobby -> 200', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
         const bob = await seedGuest(lobby.id);
 
         // ACT
         const res = await request(app)
             .patch(`/lobbies/${lobby.id}/players/${bob.id}`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST))
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
             .send({ approved: true, paid: true, position: 'Setter' });
 
         // ASSERT
@@ -52,17 +52,20 @@ describe('PATCH /lobbies/:lobbyId/players/:playerId (Update Player)', () => {
         expect(updatedBob?.position).toBe('Setter');
     });
 
-    it('Sad Path: host updates a player in a lobby they do not own -> 403', async () => {
+    it('Sad Path: organizer updates a player in a lobby they do not own -> 403', async () => {
         // ARRANGE
-        const ownerHost = await seedUser();
-        const otherHost = await seedUser();
-        const lobby = await seedLobby(ownerHost.id);
+        const ownerOrganizer = await seedUser();
+        const otherOrganizer = await seedUser();
+        const lobby = await seedLobby(ownerOrganizer.id);
         const bob = await seedGuest(lobby.id);
 
         // ACT
         const res = await request(app)
             .patch(`/lobbies/${lobby.id}/players/${bob.id}`)
-            .set('Authorization', makeAuthHeader(otherHost.id, Role.HOST))
+            .set(
+                'Authorization',
+                makeAuthHeader(otherOrganizer.id, Role.ORGANIZER),
+            )
             .send({ paid: true });
 
         // ASSERT
@@ -75,18 +78,18 @@ describe('PATCH /lobbies/:lobbyId/players/:playerId (Update Player)', () => {
     });
 
     // IDOR: same attack as the delete test, via PATCH.
-    it('Sad Path: host updates a player from another lobby via their own lobby URL -> 404', async () => {
+    it('Sad Path: organizer updates a player from another lobby via their own lobby URL -> 404', async () => {
         // ARRANGE
-        const hostA = await seedUser();
-        const hostB = await seedUser();
-        const lobbyA = await seedLobby(hostA.id);
-        const lobbyB = await seedLobby(hostB.id);
+        const organizerA = await seedUser();
+        const organizerB = await seedUser();
+        const lobbyA = await seedLobby(organizerA.id);
+        const lobbyB = await seedLobby(organizerB.id);
         const bob = await seedGuest(lobbyB.id);
 
         // ACT
         const res = await request(app)
             .patch(`/lobbies/${lobbyA.id}/players/${bob.id}`)
-            .set('Authorization', makeAuthHeader(hostA.id, Role.HOST))
+            .set('Authorization', makeAuthHeader(organizerA.id, Role.ORGANIZER))
             .send({ paid: true });
 
         // ASSERT
@@ -100,14 +103,14 @@ describe('PATCH /lobbies/:lobbyId/players/:playerId (Update Player)', () => {
 
     it('Sad Path: invalid body -> 400', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
         const bob = await seedGuest(lobby.id);
 
         // ACT
         const res = await request(app)
             .patch(`/lobbies/${lobby.id}/players/${bob.id}`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST))
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
             .send({ paid: 'yes' });
 
         // ASSERT

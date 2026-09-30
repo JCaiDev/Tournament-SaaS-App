@@ -29,16 +29,16 @@ describe('DELETE /lobbies/:lobbyId/players/:playerId (Delete Player)', () => {
 
     // Regression: assertPlayerInLobby was called with (playerId, lobbyId),
     // so every delete returned 404 "Player not found".
-    it('Happy Path: host removes a guest from their own lobby -> 204', async () => {
+    it('Happy Path: organizer removes a guest from their own lobby -> 204', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
         const bob = await seedGuest(lobby.id);
 
         // ACT
         const res = await request(app)
             .delete(`/lobbies/${lobby.id}/players/${bob.id}`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST));
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER));
 
         // ASSERT
         expect(res.status).toBe(204);
@@ -50,8 +50,8 @@ describe('DELETE /lobbies/:lobbyId/players/:playerId (Delete Player)', () => {
 
     it('Happy Path: ADMIN removes a guest from any lobby -> 204', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
         const bob = await seedGuest(lobby.id);
 
         // ACT
@@ -69,8 +69,8 @@ describe('DELETE /lobbies/:lobbyId/players/:playerId (Delete Player)', () => {
 
     it('Sad Path: not logged in -> 401', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
         const bob = await seedGuest(lobby.id);
 
         // ACT
@@ -89,14 +89,14 @@ describe('DELETE /lobbies/:lobbyId/players/:playerId (Delete Player)', () => {
 
     it('Sad Path: PLAYER role -> 403', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
         const bob = await seedGuest(lobby.id);
 
         // ACT
         const res = await request(app)
             .delete(`/lobbies/${lobby.id}/players/${bob.id}`)
-            .set('Authorization', makeAuthHeader(host.id, Role.PLAYER));
+            .set('Authorization', makeAuthHeader(organizer.id, Role.PLAYER));
 
         // ASSERT
         expect(res.status).toBe(403);
@@ -107,17 +107,20 @@ describe('DELETE /lobbies/:lobbyId/players/:playerId (Delete Player)', () => {
         expect(stillThere).not.toBeNull();
     });
 
-    it('Sad Path: host deletes a player from a lobby they do not own -> 403', async () => {
+    it('Sad Path: organizer deletes a player from a lobby they do not own -> 403', async () => {
         // ARRANGE
-        const ownerHost = await seedUser();
-        const otherHost = await seedUser();
-        const lobby = await seedLobby(ownerHost.id);
+        const ownerOrganizer = await seedUser();
+        const otherOrganizer = await seedUser();
+        const lobby = await seedLobby(ownerOrganizer.id);
         const bob = await seedGuest(lobby.id);
 
         // ACT
         const res = await request(app)
             .delete(`/lobbies/${lobby.id}/players/${bob.id}`)
-            .set('Authorization', makeAuthHeader(otherHost.id, Role.HOST));
+            .set(
+                'Authorization',
+                makeAuthHeader(otherOrganizer.id, Role.ORGANIZER),
+            );
 
         // ASSERT
         expect(res.status).toBe(403);
@@ -128,20 +131,23 @@ describe('DELETE /lobbies/:lobbyId/players/:playerId (Delete Player)', () => {
         expect(stillThere).not.toBeNull();
     });
 
-    // IDOR: host A passes the manager check for their own lobby, then targets
+    // IDOR: organizer A passes the manager check for their own lobby, then targets
     // a player in lobby B. 404 (not 403) so we don't confirm the player exists.
-    it('Sad Path: host deletes a player from another lobby via their own lobby URL -> 404', async () => {
+    it('Sad Path: organizer deletes a player from another lobby via their own lobby URL -> 404', async () => {
         // ARRANGE
-        const hostA = await seedUser();
-        const hostB = await seedUser();
-        const lobbyA = await seedLobby(hostA.id);
-        const lobbyB = await seedLobby(hostB.id);
+        const organizerA = await seedUser();
+        const organizerB = await seedUser();
+        const lobbyA = await seedLobby(organizerA.id);
+        const lobbyB = await seedLobby(organizerB.id);
         const bob = await seedGuest(lobbyB.id);
 
         // ACT
         const res = await request(app)
             .delete(`/lobbies/${lobbyA.id}/players/${bob.id}`)
-            .set('Authorization', makeAuthHeader(hostA.id, Role.HOST));
+            .set(
+                'Authorization',
+                makeAuthHeader(organizerA.id, Role.ORGANIZER),
+            );
 
         // ASSERT
         expect(res.status).toBe(404);
@@ -154,13 +160,13 @@ describe('DELETE /lobbies/:lobbyId/players/:playerId (Delete Player)', () => {
 
     it('Sad Path: player does not exist -> 404', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         // ACT
         const res = await request(app)
             .delete(`/lobbies/${lobby.id}/players/${randomUUID()}`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST));
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER));
 
         // ASSERT
         expect(res.status).toBe(404);
@@ -169,13 +175,13 @@ describe('DELETE /lobbies/:lobbyId/players/:playerId (Delete Player)', () => {
 
     it('Sad Path: playerId is not a UUID -> 400', async () => {
         // ARRANGE
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         // ACT
         const res = await request(app)
             .delete(`/lobbies/${lobby.id}/players/Bob`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST));
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER));
 
         // ASSERT
         expect(res.status).toBe(400);

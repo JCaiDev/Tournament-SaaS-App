@@ -25,12 +25,12 @@ describe('/DELETE /lobbies (Delete a Lobby)', () => {
     });
 
     it(`Happy Path: Owner deletes it's lobby`, async () => {
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         const res = await request(app)
             .delete(`/lobbies/${lobby.id}`)
-            .set('Authorization', makeAuthHeader(host.id, Role.HOST));
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER));
 
         expect(res.status).toBe(204);
         const deletedLobby = await prisma.lobby.findUnique({
@@ -40,8 +40,8 @@ describe('/DELETE /lobbies (Delete a Lobby)', () => {
     });
 
     it(`Happy Path: ADMIN can delete any lobby`, async () => {
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
 
         const res = await request(app)
             .delete(`/lobbies/${lobby.id}`)
@@ -54,13 +54,16 @@ describe('/DELETE /lobbies (Delete a Lobby)', () => {
         expect(deletedLobby).toBeNull();
     });
 
-    it('Sad Path: Host tries to delete lobby owned by another host', async () => {
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
-        const evilHost = await seedUser({ name: 'evilHost' });
+    it('Sad Path: Organizer tries to delete lobby owned by another organizer', async () => {
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
+        const evilOrganizer = await seedUser({ name: 'evilOrganizer' });
         const res = await request(app)
             .delete(`/lobbies/${lobby.id}`)
-            .set('Authorization', makeAuthHeader(evilHost.id, Role.HOST));
+            .set(
+                'Authorization',
+                makeAuthHeader(evilOrganizer.id, Role.ORGANIZER),
+            );
 
         expect(res.status).toBe(403);
         const fetchedLobby = await prisma.lobby.findUnique({
@@ -82,8 +85,8 @@ describe('/DELETE /lobbies (Delete a Lobby)', () => {
 
     //test 5
     it('Sad Path: no token -> 401', async () => {
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
         const res = await request(app).delete(`/lobbies/${lobby.id}`);
 
         expect(res.status).toBe(401);
@@ -96,8 +99,8 @@ describe('/DELETE /lobbies (Delete a Lobby)', () => {
 
     //test 6
     it('Sad Path: PLAYER tries to delete a lobby', async () => {
-        const host = await seedUser();
-        const lobby = await seedLobby(host.id);
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
         const player = await seedUser({ name: 'player' });
         const res = await request(app)
             .delete(`/lobbies/${lobby.id}`)
