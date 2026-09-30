@@ -16,7 +16,7 @@ import { AuthService } from '../../services/auth.service';
 const MOCK_HOST: PublicUser = {
   id: 'mock-host',
   name: 'You (demo host)',
-  role: 'HOST',
+  role: 'ORGANIZER',
   createdAt: new Date().toISOString(),
   pictureUrl: null,
 };

@@ -3,12 +3,11 @@
 
 export type SkillLevel = 'OPEN' | 'INTERMEDIATE' | 'INTERMEDIATE_PLUS';
 export type GenderFormat = 'MENS' | 'WOMENS' | 'COED';
-// HOST is being renamed to ORGANIZER (expand/contract); both exist until PR 3.
-export type Role = 'ADMIN' | 'HOST' | 'ORGANIZER' | 'PLAYER';
+export type Role = 'ADMIN' | 'ORGANIZER' | 'PLAYER';
 
 // Mirrors the API's ORGANIZER_ROLES: who may create and manage lobbies.
 // Display only; the API enforces it.
-export const ORGANIZER_ROLES: readonly Role[] = ['ADMIN', 'HOST', 'ORGANIZER'];
+export const ORGANIZER_ROLES: readonly Role[] = ['ADMIN', 'ORGANIZER'];
 
 export interface PublicUser {
   id: string;
