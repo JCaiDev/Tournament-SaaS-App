@@ -43,8 +43,8 @@ describe('POST /lobbies (Create Lobby)', () => {
     // ---------- WORKED EXAMPLE: happy path ----------
     it('Happy Path: an ORGANIZER creates a lobby -> 201 with a public lobby', async () => {
         // ARRANGE
-        // Must seed a REAL user row: createLobbyService stamps hostId from the
-        // token, and Lobby.hostId is a foreign key -> the user must exist in the DB.
+        // Must seed a REAL user row: createLobbyService stamps organizerId from the
+        // token, and Lobby.organizerId is a foreign key -> the user must exist in the DB.
         const organizer = await seedUser();
 
         // ACT
@@ -57,10 +57,10 @@ describe('POST /lobbies (Create Lobby)', () => {
         // ASSERT
         expect(res.status).toBe(201);
         expect(res.body.lobby.lobbyName).toBe('Sunday Intermediate Drop-In');
-        // hostId comes from the TOKEN, never the body — this proves that decision:
-        expect(res.body.lobby.host.id).toBe(organizer.id);
-        // publicLobbySelect exposes only public host fields — no private data leaked:
-        expect(res.body.lobby.host).not.toHaveProperty('email');
+        // organizerId comes from the TOKEN, never the body — this proves that decision:
+        expect(res.body.lobby.organizer.id).toBe(organizer.id);
+        // publicLobbySelect exposes only public organizer fields — no private data leaked:
+        expect(res.body.lobby.organizer).not.toHaveProperty('email');
     });
 
     // Unauthorized: not logged in, return 401

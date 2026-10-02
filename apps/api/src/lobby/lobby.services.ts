@@ -15,15 +15,15 @@ export const publicLobbySelect = {
     genderFormat: true,
     allowToApply: true,
     createdAt: true,
-    host: { select: publicUserSelect },
+    organizer: { select: publicUserSelect },
 } satisfies Prisma.LobbySelect;
 
 export const createLobbyService = async (
     data: CreateLobbyInput,
-    hostId: string,
+    organizerId: string,
 ) => {
     return prisma.lobby.create({
-        data: { ...data, hostId },
+        data: { ...data, organizerId },
         select: publicLobbySelect,
     });
 };
@@ -55,12 +55,12 @@ export const updateLobbyService = async (
         where: { id },
         select: {
             id: true,
-            hostId: true,
+            organizerId: true,
         },
     });
 
     if (!lobby) throw new AppError('Lobby not found', 404);
-    if (lobby.hostId !== userId && role !== Role.ADMIN)
+    if (lobby.organizerId !== userId && role !== Role.ADMIN)
         throw new AppError('Access Denied', 403);
     return prisma.lobby.update({
         where: { id },
@@ -78,12 +78,12 @@ export const deleteLobbyService = async (
         where: { id },
         select: {
             id: true,
-            hostId: true,
+            organizerId: true,
         },
     });
 
     if (!lobby) throw new AppError('Lobby not found', 404);
-    if (lobby.hostId !== userId && role !== Role.ADMIN)
+    if (lobby.organizerId !== userId && role !== Role.ADMIN)
         throw new AppError('Access Denied', 403);
 
     const deleteLobby = await prisma.lobby.delete({

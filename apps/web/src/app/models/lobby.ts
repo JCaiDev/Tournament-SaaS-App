@@ -30,7 +30,7 @@ export interface Lobby {
   // Max players on the active roster; null means no cap (unlimited).
   capacity: number | null;
   createdAt: string;
-  host: PublicUser;
+  organizer: PublicUser;
 }
 
 // Response envelopes from the API

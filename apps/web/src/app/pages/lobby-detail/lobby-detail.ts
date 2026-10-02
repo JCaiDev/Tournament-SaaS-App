@@ -57,10 +57,10 @@ export class LobbyDetail implements OnInit {
     position: [''],
   });
 
-  // Host controls
+  // Organizer controls
   readonly capacitySaving = signal(false);
   readonly acceptingSaving = signal(false);
-  readonly hostActionError = signal<string | null>(null);
+  readonly organizerActionError = signal<string | null>(null);
   readonly copied = signal(false);
   // Name of the player just bumped from the waitlist, shown briefly.
   readonly promotedName = signal<string | null>(null);
@@ -181,7 +181,7 @@ export class LobbyDetail implements OnInit {
     const user = this.auth.currentUser();
     const lobby = this.lobby();
     if (!user || !lobby) return false;
-    return user.id === lobby.host.id || user.role === 'ADMIN';
+    return user.id === lobby.organizer.id || user.role === 'ADMIN';
   }
 
   deleteLobby(): void {
@@ -197,12 +197,12 @@ export class LobbyDetail implements OnInit {
     });
   }
 
-  // Host or admin may manage the roster.
+  // The organizer or an admin may manage the roster.
   canManage(): boolean {
     const user = this.auth.currentUser();
     const lobby = this.lobby();
     if (!user || !lobby) return false;
-    return user.id === lobby.host.id || user.role === 'ADMIN';
+    return user.id === lobby.organizer.id || user.role === 'ADMIN';
   }
 
   playerName(player: LobbyPlayer): string {
@@ -231,7 +231,7 @@ export class LobbyDetail implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.adding.set(false);
-          if (err.status === 403) this.addError.set('Only the host can add players.');
+          if (err.status === 403) this.addError.set('Only the organizer can add players.');
           else if (err.status === 400) this.addError.set('Enter a name for the player.');
           else this.addError.set('Could not add the player.');
         },
@@ -337,7 +337,7 @@ export class LobbyDetail implements OnInit {
   private saveCapacity(next: number | null): void {
     const lobby = this.lobby();
     if (!lobby || this.capacitySaving()) return;
-    this.hostActionError.set(null);
+    this.organizerActionError.set(null);
     this.capacitySaving.set(true);
     this.lobbyService.updateLobby(lobby.id, { capacity: next }).subscribe({
       next: (updated) => {
@@ -346,7 +346,7 @@ export class LobbyDetail implements OnInit {
       },
       error: () => {
         this.capacitySaving.set(false);
-        this.hostActionError.set('Could not update the roster cap.');
+        this.organizerActionError.set('Could not update the roster cap.');
       },
     });
   }
@@ -354,7 +354,7 @@ export class LobbyDetail implements OnInit {
   toggleAccepting(): void {
     const lobby = this.lobby();
     if (!lobby || this.acceptingSaving()) return;
-    this.hostActionError.set(null);
+    this.organizerActionError.set(null);
     this.acceptingSaving.set(true);
     this.lobbyService.updateLobby(lobby.id, { allowToApply: !lobby.allowToApply }).subscribe({
       next: (updated) => {
@@ -363,7 +363,7 @@ export class LobbyDetail implements OnInit {
       },
       error: () => {
         this.acceptingSaving.set(false);
-        this.hostActionError.set('Could not update the lobby.');
+        this.organizerActionError.set('Could not update the lobby.');
       },
     });
   }
@@ -375,7 +375,7 @@ export class LobbyDetail implements OnInit {
         this.copied.set(true);
         setTimeout(() => this.copied.set(false), 2000);
       })
-      .catch(() => this.hostActionError.set('Could not copy the invite link.'));
+      .catch(() => this.organizerActionError.set('Could not copy the invite link.'));
   }
 
   private announcePromotion(player: LobbyPlayer): void {

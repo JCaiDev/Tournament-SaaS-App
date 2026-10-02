@@ -7,26 +7,28 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  email        String         @unique
-  passwordHash String?
-  name         String
-  birthDate    DateTime?      @db.Date
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  deletedAt    DateTime?
-  role         Role           @default(PLAYER)
-  googleSub    String?        @unique
-  pictureUrl   String?
-  lobbies      Lobby[]        @relation("HostedLobbies")
-  lobbyPlayers LobbyPlayer[]
-  refreshToken RefreshToken[]
+  id               String         @id @default(uuid())
+  email            String         @unique
+  passwordHash     String?
+  name             String
+  birthDate        DateTime?      @db.Date
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+  role             Role           @default(PLAYER)
+  googleSub        String?        @unique
+  pictureUrl       String?
+  organizedLobbies Lobby[]        @relation("OrganizedLobbies")
+  lobbyPlayers     LobbyPlayer[]
+  refreshToken     RefreshToken[]
 }
 
 model Lobby {
   id           String        @id @default(uuid())
   location     String
-  hostId       String
+  // The Postgres column is still "hostId": renaming it would need its own
+  // expand/contract migration, so @map keeps the database unchanged.
+  organizerId  String        @map("hostId")
   allowToApply Boolean
   createdAt    DateTime      @default(now())
   endTime      DateTime
@@ -35,7 +37,7 @@ model Lobby {
   price        Float
   skillLevel   SkillLevel
   startTime    DateTime
-  host         User          @relation("HostedLobbies", fields: [hostId], references: [id])
+  organizer    User          @relation("OrganizedLobbies", fields: [organizerId], references: [id])
   players      LobbyPlayer[]
 }
 

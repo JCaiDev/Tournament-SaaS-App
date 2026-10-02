@@ -15,10 +15,10 @@ export function validLobbyBody(overrides: Record<string, unknown> = {}) {
     };
 }
 
-// creates a real lobby row owned by hostId — perfect for the delete test's arrange
-export async function seedLobby(hostId: string, overrides = {}) {
+// creates a real lobby row owned by organizerId — perfect for the delete test's arrange
+export async function seedLobby(organizerId: string, overrides = {}) {
     return prisma.lobby.create({
-        data: { ...validLobbyBody(), hostId, ...overrides },
+        data: { ...validLobbyBody(), organizerId, ...overrides },
     });
 }
 

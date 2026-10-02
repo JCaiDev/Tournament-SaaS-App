@@ -8,7 +8,7 @@
       <a routerLink="/" class="nav-link">Active Lobbies</a>
       @if (isLoggedIn()) {
         @if (canOrganize()) {
-        <a routerLink="/lobbies/new" class="nav-btn nav-btn-cta">Host a game</a>
+        <a routerLink="/lobbies/new" class="nav-btn nav-btn-cta">Organize a game</a>
 }
         <a routerLink="/profile" class="nav-user">
           @if (user()?.pictureUrl) {
