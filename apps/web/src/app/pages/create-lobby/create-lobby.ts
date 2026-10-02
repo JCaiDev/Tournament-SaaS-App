@@ -52,7 +52,7 @@ export class CreateLobby {
             next: (lobby) => this.router.navigate(['/lobbies', lobby.id]),
             error: (err: HttpErrorResponse) => {
                 this.submitting.set(false);
-                if (err.status === 403) this.serverError.set('Only hosts can create lobbies');
+                if (err.status === 403) this.serverError.set('Only organizers can create lobbies');
                 else if (err.status === 400) this.serverError.set('Check your input - end must be after start, and start must be in the future.');
                 else this.serverError.set('Something went wrong.')
             }

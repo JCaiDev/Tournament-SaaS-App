@@ -3,7 +3,7 @@
     <span class="hero-eyebrow">Pickup volleyball, organized</span>
     <h1 class="hero-title">Find an active game near you</h1>
     <p class="hero-sub">
-      Browse open lobbies hosted by the community. Tap any game to see the
+      Browse open lobbies organized by the community. Tap any game to see the
       details and how to join.
     </p>
   </div>
@@ -63,19 +63,19 @@
             }
           </div>
 
-          <div class="host">
-            @if (lobby.host.pictureUrl) {
+          <div class="organizer">
+            @if (lobby.organizer.pictureUrl) {
               <img
-                class="host-avatar"
-                [src]="lobby.host.pictureUrl"
-                [alt]="lobby.host.name"
+                class="organizer-avatar"
+                [src]="lobby.organizer.pictureUrl"
+                [alt]="lobby.organizer.name"
               />
             } @else {
-              <span class="host-avatar host-avatar-fallback">
-                {{ lobby.host.name.charAt(0) }}
+              <span class="organizer-avatar organizer-avatar-fallback">
+                {{ lobby.organizer.name.charAt(0) }}
               </span>
             }
-            <span class="host-name">Hosted by {{ lobby.host.name }}</span>
+            <span class="organizer-name">Organized by {{ lobby.organizer.name }}</span>
           </div>
         </a>
       }

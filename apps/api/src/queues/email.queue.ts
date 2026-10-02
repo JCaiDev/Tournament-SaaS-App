@@ -18,7 +18,7 @@ export const addEmailJob = async (email: string, name: string) => {
     await emailQueue.add('welcome-email', {
         email,
         name,
-        subject: 'Welcome to Neow!',
+        subject: 'Welcome to the SideOut Community!',
     });
     console.log(`Job queue added for ${email}`);
 };

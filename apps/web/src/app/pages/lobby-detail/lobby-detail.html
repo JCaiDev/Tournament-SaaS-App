@@ -56,21 +56,21 @@
         </div>
       </dl>
 
-      <footer class="host-block">
-        @if (l.host.pictureUrl) {
+      <footer class="organizer-block">
+        @if (l.organizer.pictureUrl) {
           <img
-            class="host-avatar"
-            [src]="l.host.pictureUrl"
-            [alt]="l.host.name"
+            class="organizer-avatar"
+            [src]="l.organizer.pictureUrl"
+            [alt]="l.organizer.name"
           />
         } @else {
-          <span class="host-avatar host-avatar-fallback">
-            {{ l.host.name.charAt(0) }}
+          <span class="organizer-avatar organizer-avatar-fallback">
+            {{ l.organizer.name.charAt(0) }}
           </span>
         }
         <div>
-          <span class="host-label">Host</span>
-          <span class="host-name">{{ l.host.name }}</span>
+          <span class="organizer-label">Organizer</span>
+          <span class="organizer-name">{{ l.organizer.name }}</span>
         </div>
       </footer>
       <footer class="action-bar">
@@ -90,10 +90,10 @@
       }
 
       @if (canManage()) {
-        <section class="host-tools">
-          <div class="host-tools-head">
-            <h2 class="section-title">Host tools</h2>
-            @if (hostActionError()) { <p class="field-error">{{ hostActionError() }}</p> }
+        <section class="organizer-tools">
+          <div class="organizer-tools-head">
+            <h2 class="section-title">Organizer tools</h2>
+            @if (organizerActionError()) { <p class="field-error">{{ organizerActionError() }}</p> }
           </div>
 
           <div class="tool-grid">

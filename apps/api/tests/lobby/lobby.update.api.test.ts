@@ -37,8 +37,8 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
         // Other fields should remain unchanged from the seed
         expect(res.body.lobby.lobbyName).toBe('Sunday Intermediate Drop-In');
         expect(res.body.lobby.skillLevel).toBe(SkillLevel.OPEN);
-        // The lobby's host (owner) should still be the same
-        expect(res.body.lobby.host.id).toBe(organizer.id);
+        // The lobby's organizer should still be the same
+        expect(res.body.lobby.organizer.id).toBe(organizer.id);
     });
 
     it('Happy Path: ADMIN can update any lobby -> 200', async () => {
@@ -56,7 +56,7 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
         expect(res.status).toBe(200);
         expect(res.body.lobby.lobbyName).toBe('Admin Updated Lobby');
         // organizer should still be the original organizer
-        expect(res.body.lobby.host.id).toBe(organizer.id);
+        expect(res.body.lobby.organizer.id).toBe(organizer.id);
     });
 
     // ---------- AUTH / ROLE SAD PATHS ----------

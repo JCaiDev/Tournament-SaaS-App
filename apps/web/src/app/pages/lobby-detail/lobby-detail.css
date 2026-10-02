@@ -85,7 +85,7 @@
   font-weight: 600;
 }
 
-.host-block {
+.organizer-block {
   display: flex;
   align-items: center;
   gap: var(--space-md);
@@ -93,14 +93,14 @@
   padding-top: var(--space-lg);
 }
 
-.host-avatar {
+.organizer-avatar {
   width: 48px;
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.host-avatar-fallback {
+.organizer-avatar-fallback {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -111,7 +111,7 @@
   text-transform: uppercase;
 }
 
-.host-label {
+.organizer-label {
   display: block;
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -120,12 +120,12 @@
   font-weight: 700;
 }
 
-.host-name {
+.organizer-name {
   font-weight: 600;
   font-size: 1.05rem;
 }
 
-/* Edit / Delete buttons under the host block (hosts and admins only). */
+/* Edit / Delete buttons under the organizer block (organizers and admins only). */
 .action-bar {
   display: flex;
   flex-wrap: wrap;
@@ -306,7 +306,7 @@
   border-color: transparent;
 }
 
-/* Status tags double as toggle buttons for hosts. */
+/* Status tags double as toggle buttons for organizers. */
 button.tag {
   cursor: pointer;
   font-family: inherit;
@@ -459,9 +459,9 @@ button.tag:disabled {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ---------- Host tools ---------- */
+/* ---------- Organizer tools ---------- */
 
-.host-tools {
+.organizer-tools {
   margin-top: var(--space-lg);
   padding: var(--space-lg);
   background: var(--color-background);
@@ -469,7 +469,7 @@ button.tag:disabled {
   border-radius: var(--radius-md);
 }
 
-.host-tools-head {
+.organizer-tools-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -477,7 +477,7 @@ button.tag:disabled {
   gap: var(--space-sm);
 }
 
-.host-tools-head .section-title {
+.organizer-tools-head .section-title {
   margin: 0;
 }
 
@@ -979,7 +979,7 @@ button.tag:disabled {
     padding: 0.6rem 0.5rem;
   }
 
-  .host-tools,
+  .organizer-tools,
   .team-maker {
     padding: var(--space-md);
   }

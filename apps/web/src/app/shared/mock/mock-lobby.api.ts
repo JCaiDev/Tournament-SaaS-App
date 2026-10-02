@@ -12,10 +12,10 @@ import {
 } from '../../models/lobby';
 import { AuthService } from '../../services/auth.service';
 
-// Dev-only fallback "host" used when nobody is signed in, so host tools show.
-const MOCK_HOST: PublicUser = {
-  id: 'mock-host',
-  name: 'You (demo host)',
+// Dev-only fallback "organizer" used when nobody is signed in, so organizer tools show.
+const MOCK_ORGANIZER: PublicUser = {
+  id: 'mock-organizer',
+  name: 'You (demo organizer)',
   role: 'ORGANIZER',
   createdAt: new Date().toISOString(),
   pictureUrl: null,
@@ -34,30 +34,30 @@ export class MockLobbyApi {
   private lobbies: Lobby[] = seedLobbies();
   private players: LobbyPlayer[] = seedPlayers();
 
-  // Sign the visitor in as the demo host (only if nobody is already signed in)
-  // so the host-only roster controls are visible in the demo.
+  // Sign the visitor in as the demo organizer (only if nobody is already signed in)
+  // so the organizer-only roster controls are visible in the demo.
   ensureDemoSession(): void {
     if (this.auth.currentUser()) return;
     this.auth.currentUser.set({
-      id: MOCK_HOST.id,
+      id: MOCK_ORGANIZER.id,
       email: 'demo@example.com',
-      name: MOCK_HOST.name,
+      name: MOCK_ORGANIZER.name,
       birthDate: null,
-      role: MOCK_HOST.role,
-      createdAt: MOCK_HOST.createdAt,
-      updatedAt: MOCK_HOST.createdAt,
+      role: MOCK_ORGANIZER.role,
+      createdAt: MOCK_ORGANIZER.createdAt,
+      updatedAt: MOCK_ORGANIZER.createdAt,
       pictureUrl: null,
     });
   }
 
   listLobbies(): Observable<Lobby[]> {
-    return this.ok(this.lobbies.map((l) => this.withHost(l)));
+    return this.ok(this.lobbies.map((l) => this.withOrganizer(l)));
   }
 
   getLobby(id: string): Observable<Lobby> {
     const lobby = this.lobbies.find((l) => l.id === id);
     if (!lobby) return throwError(() => ({ status: 404 })).pipe(delay(LATENCY_MS));
-    return this.ok(this.withHost(lobby));
+    return this.ok(this.withOrganizer(lobby));
   }
 
   createLobby(data: CreateLobbyRequest): Observable<Lobby> {
@@ -65,7 +65,7 @@ export class MockLobbyApi {
       ...data,
       id: uuid(),
       createdAt: new Date().toISOString(),
-      host: this.effectiveHost(),
+      organizer: this.effectiveOrganizer(),
       capacity: data.capacity ?? null,
     };
     this.lobbies = [lobby, ...this.lobbies];
@@ -76,7 +76,7 @@ export class MockLobbyApi {
     const lobby = this.lobbies.find((l) => l.id === id);
     if (!lobby) return throwError(() => ({ status: 404 })).pipe(delay(LATENCY_MS));
     Object.assign(lobby, data);
-    return this.ok(this.withHost(lobby));
+    return this.ok(this.withOrganizer(lobby));
   }
 
   deleteLobby(id: string): Observable<void> {
@@ -121,10 +121,10 @@ export class MockLobbyApi {
     return this.ok(undefined);
   }
 
-  // The signed-in user (mapped to a public shape), or the demo host.
-  private effectiveHost(): PublicUser {
+  // The signed-in user (mapped to a public shape), or the demo organizer.
+  private effectiveOrganizer(): PublicUser {
     const u = this.auth.currentUser();
-    if (!u) return MOCK_HOST;
+    if (!u) return MOCK_ORGANIZER;
     return {
       id: u.id,
       name: u.name,
@@ -134,9 +134,9 @@ export class MockLobbyApi {
     };
   }
 
-  // Present every lobby as hosted by the viewer so host tools are usable in the demo.
-  private withHost(lobby: Lobby): Lobby {
-    return { ...lobby, host: this.effectiveHost() };
+  // Present every lobby as organized by the viewer so organizer tools are usable in the demo.
+  private withOrganizer(lobby: Lobby): Lobby {
+    return { ...lobby, organizer: this.effectiveOrganizer() };
   }
 
   private ok<T>(value: T): Observable<T> {
@@ -159,7 +159,7 @@ function seedLobbies(): Lobby[] {
       allowToApply: true,
       capacity: 24,
       createdAt: new Date().toISOString(),
-      host: MOCK_HOST,
+      organizer: MOCK_ORGANIZER,
     },
     {
       id: 'mock-lobby-2',
@@ -173,7 +173,7 @@ function seedLobbies(): Lobby[] {
       allowToApply: true,
       capacity: null,
       createdAt: new Date().toISOString(),
-      host: MOCK_HOST,
+      organizer: MOCK_ORGANIZER,
     },
   ];
 }

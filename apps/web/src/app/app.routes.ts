@@ -10,7 +10,7 @@ import { EditLobby } from './pages/edit-lobby/edit-lobby';
 
 export const routes: Routes = [
   { path: '', component: Home, title: 'Active Lobbies · Volleyball' },
-  { path: 'lobbies/new', component: CreateLobby, title: 'Host a Game · Volleyball', canActivate: [authGuard]},
+  { path: 'lobbies/new', component: CreateLobby, title: 'Organize a Game · Volleyball', canActivate: [authGuard]},
   { path: 'lobbies/:id', component: LobbyDetail, title: 'Lobby Details · Volleyball' },
   { path: 'lobbies/:id/edit', component: EditLobby, title: 'Edit Lobby · Volleyball', canActivate: [authGuard] },
   { path: 'login', component: Login, title: 'Log in · Volleyball' },

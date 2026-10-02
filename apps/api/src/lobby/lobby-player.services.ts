@@ -8,12 +8,13 @@ const assertLobbyManager = async (lobbyId: string, actor: AuthUser) => {
     const lobby = await prisma.lobby.findUnique({
         where: { id: lobbyId },
         select: {
-            hostId: true,
+            organizerId: true,
         },
     });
 
     if (!lobby) throw new AppError('Lobby not found', 404);
-    const isManager = lobby.hostId === actor.id || actor.role === Role.ADMIN;
+    const isManager =
+        lobby.organizerId === actor.id || actor.role === Role.ADMIN;
     if (!isManager) throw new AppError('Forbidden', 403);
 };
 
