@@ -37,8 +37,18 @@ model Lobby {
   price        Float
   skillLevel   SkillLevel
   startTime    DateTime
+  format       LobbyFormat   @default(PICKUP)
   organizer    User          @relation("OrganizedLobbies", fields: [organizerId], references: [id])
   players      LobbyPlayer[]
+  teams        Team[]
+}
+
+model Team {
+  id        String  @id @default(uuid())
+  lobbyId   String
+  name      String
+  lobby     Lobby   @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  @@unique([lobbyId, name])
 }
 
 model LobbyPlayer {
@@ -54,7 +64,6 @@ model LobbyPlayer {
   user      User?    @relation(fields: [userId], references: [id])
 
   @@unique([lobbyId, userId])
-  @@index([lobbyId])
 }
 
 model RefreshToken {
@@ -71,6 +80,11 @@ enum Role {
   ADMIN
   ORGANIZER
   PLAYER
+}
+
+enum LobbyFormat {
+  PICKUP
+  TOURNAMENT
 }
 
 enum SkillLevel {
