@@ -21,24 +21,53 @@ model User {
   organizedLobbies Lobby[]        @relation("OrganizedLobbies")
   lobbyPlayers     LobbyPlayer[]
   refreshToken     RefreshToken[]
+  rosterEntries    RosterEntry[]
 }
 
 model Lobby {
-  id           String        @id @default(uuid())
-  location     String
+  id            String        @id @default(uuid())
+  location      String
   // The Postgres column is still "hostId": renaming it would need its own
   // expand/contract migration, so @map keeps the database unchanged.
-  organizerId  String        @map("hostId")
-  allowToApply Boolean
-  createdAt    DateTime      @default(now())
-  endTime      DateTime
-  genderFormat GenderFormat
-  lobbyName    String
-  price        Float
-  skillLevel   SkillLevel
-  startTime    DateTime
-  organizer    User          @relation("OrganizedLobbies", fields: [organizerId], references: [id])
-  players      LobbyPlayer[]
+  organizerId   String        @map("hostId")
+  allowToApply  Boolean
+  createdAt     DateTime      @default(now())
+  endTime       DateTime
+  genderFormat  GenderFormat
+  lobbyName     String
+  price         Float
+  skillLevel    SkillLevel
+  startTime     DateTime
+  format        LobbyFormat   @default(PICKUP)
+  organizer     User          @relation("OrganizedLobbies", fields: [organizerId], references: [id])
+  players       LobbyPlayer[]
+  teams         Team[]
+  rosterEntries RosterEntry[]
+}
+
+model Team {
+  id            String        @id @default(uuid())
+  lobbyId       String
+  name          String
+  lobby         Lobby         @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  rosterEntries RosterEntry[]
+
+  @@unique([lobbyId, name])
+}
+
+model RosterEntry {
+  id           String  @id @default(uuid())
+  lobbyId      String
+  name         String
+  teamId       String?
+  jerseyNumber Int?
+  userId       String?
+  lobby        Lobby   @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  team         Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  user         User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([lobbyId, userId])
+  @@index([teamId])
 }
 
 model LobbyPlayer {
@@ -54,7 +83,6 @@ model LobbyPlayer {
   user      User?    @relation(fields: [userId], references: [id])
 
   @@unique([lobbyId, userId])
-  @@index([lobbyId])
 }
 
 model RefreshToken {
@@ -71,6 +99,11 @@ enum Role {
   ADMIN
   ORGANIZER
   PLAYER
+}
+
+enum LobbyFormat {
+  PICKUP
+  TOURNAMENT
 }
 
 enum SkillLevel {
