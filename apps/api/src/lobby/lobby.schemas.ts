@@ -28,8 +28,19 @@ export const updateLobbySchema = lobbyBaseSchema.partial();
 export type CreateLobbyInput = z.infer<typeof createLobbySchema>;
 export type UpdateLobbyInput = z.infer<typeof updateLobbySchema>;
 
+// The one rule for what a lobby id looks like; every lobby route param uses it.
+export const lobbyIdSchema = z
+    .string()
+    .trim()
+    .pipe(z.uuid('Invalid lobby ID format'));
+
 export const lobbyParamSchema = z.object({
-    id: z.string().trim().pipe(z.uuid('Invalid lobby ID format')),
+    id: lobbyIdSchema,
+});
+
+export const lobbyIdParamSchema = z.object({
+    lobbyId: lobbyIdSchema,
 });
 
 export type LobbyParamInput = z.infer<typeof lobbyParamSchema>;
+export type LobbyIdParamInput = z.infer<typeof lobbyIdParamSchema>;

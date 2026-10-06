@@ -8,6 +8,7 @@ export const assertLobbyManager = async (lobbyId: string, actor: AuthUser) => {
         where: { id: lobbyId },
         select: {
             organizerId: true,
+            format: true,
         },
     });
 
@@ -15,4 +16,6 @@ export const assertLobbyManager = async (lobbyId: string, actor: AuthUser) => {
     const isManager =
         lobby.organizerId === actor.id || actor.role === Role.ADMIN;
     if (!isManager) throw new AppError('Forbidden', 403);
+
+    return lobby;
 };

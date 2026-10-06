@@ -5,8 +5,8 @@ import {
     ORGANIZER_ROLES,
 } from '../middleware/auth.middleware';
 import { validateBody, validateParams } from '../middleware/validate';
+import { lobbyIdParamSchema } from './lobby.schemas';
 import {
-    lobbyIdParamSchema,
     addLobbyPlayerSchema,
     lobbyPlayerParamSchema,
     updatePlayerSchema,

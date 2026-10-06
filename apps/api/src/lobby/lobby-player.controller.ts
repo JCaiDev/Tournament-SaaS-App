@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/AppErrors';
+import { LobbyIdParamInput } from './lobby.schemas';
 import {
-    LobbyIdParamInput,
     UpdatePlayerInput,
     AddPlayerInput,
     LobbyPlayerParamInput,
