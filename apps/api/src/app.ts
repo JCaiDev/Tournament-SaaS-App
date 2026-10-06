@@ -8,6 +8,7 @@ import userRoutes from './user/user.routes';
 import healthRoutes from './health/health.routes';
 import lobbyRoutes from './lobby/lobby.routes';
 import lobbyPlayerRoutes from './lobby/lobby-player.routes';
+import lobbyTeamRoutes from './lobby/lobby-team.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { ENV } from './config/env';
 
@@ -29,6 +30,7 @@ app.use('/users', userRoutes);
 app.use('/auth', authRoutes);
 app.use('/lobbies', lobbyRoutes);
 app.use('/lobbies', lobbyPlayerRoutes);
+app.use('/lobbies', lobbyTeamRoutes);
 
 // Error handler should be the last middleware
 app.use(errorHandler);

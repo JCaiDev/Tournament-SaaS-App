@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { lobbyIdSchema } from './lobby.schemas';
 
 export const addLobbyPlayerSchema = z
     .object({
@@ -11,12 +12,8 @@ export const addLobbyPlayerSchema = z
         path: ['userId'],
     });
 
-export const lobbyIdParamSchema = z.object({
-    lobbyId: z.uuid(),
-});
-
 export const lobbyPlayerParamSchema = z.object({
-    lobbyId: z.uuid(),
+    lobbyId: lobbyIdSchema,
     playerId: z.uuid(),
 });
 
@@ -30,4 +27,3 @@ export const updatePlayerSchema = z.object({
 export type AddPlayerInput = z.infer<typeof addLobbyPlayerSchema>;
 export type LobbyPlayerParamInput = z.infer<typeof lobbyPlayerParamSchema>;
 export type UpdatePlayerInput = z.infer<typeof updatePlayerSchema>;
-export type LobbyIdParamInput = z.infer<typeof lobbyIdParamSchema>;

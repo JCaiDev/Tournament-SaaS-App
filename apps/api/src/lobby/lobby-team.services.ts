@@ -3,14 +3,17 @@ import { AuthUser } from '../types/auth';
 import { assertLobbyManager } from './lobby-access';
 import { prisma } from '../prisma';
 import { AppError } from '../errors/AppErrors';
-import { Prisma } from '@prisma/client';
+import { Prisma, LobbyFormat } from '@prisma/client';
 
 export const addTeamService = async (
     lobbyId: string,
     actor: AuthUser,
     teamInput: AddTeamInput,
 ) => {
-    await assertLobbyManager(lobbyId, actor);
+    const lobby = await assertLobbyManager(lobbyId, actor);
+
+    if (lobby.format !== LobbyFormat.TOURNAMENT)
+        throw new AppError('Teams can only be added to tournaments', 409);
     try {
         return await prisma.team.create({
             data: {
