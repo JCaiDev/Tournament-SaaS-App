@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { uuid } from 'zod';
 
 export const addLobbyPlayerSchema = z
     .object({
