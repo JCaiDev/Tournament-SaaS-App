@@ -1,24 +1,14 @@
 import { prisma } from '../prisma';
 import { AppError } from '../errors/AppErrors';
+import { Prisma } from '@prisma/client';
 import { AddPlayerInput, UpdatePlayerInput } from './lobby-player.schemas';
-import { Role } from '@prisma/client';
 import { AuthUser } from './../types/auth';
+import { assertLobbyManager } from './lobby-access';
 
-const assertLobbyManager = async (lobbyId: string, actor: AuthUser) => {
-    const lobby = await prisma.lobby.findUnique({
-        where: { id: lobbyId },
-        select: {
-            organizerId: true,
-        },
-    });
-
-    if (!lobby) throw new AppError('Lobby not found', 404);
-    const isManager =
-        lobby.organizerId === actor.id || actor.role === Role.ADMIN;
-    if (!isManager) throw new AppError('Forbidden', 403);
-};
-
-const assertPlayerInLobby = async (lobbyId: string, playerId: string) => {
+export const assertPlayerInLobby = async (
+    lobbyId: string,
+    playerId: string,
+) => {
     const player = await prisma.lobbyPlayer.findUnique({
         where: { id: playerId },
         select: { lobbyId: true },
@@ -34,17 +24,27 @@ export const addLobbyPlayerService = async (
 ) => {
     await assertLobbyManager(lobbyId, actor);
 
-    return prisma.lobbyPlayer.create({
-        data: {
-            lobbyId,
-            userId: playerInput.userId ?? null,
-            guestName: playerInput.guestName ?? null,
-            position: playerInput.position ?? '',
-        },
-        include: {
-            user: { select: { id: true, name: true, pictureUrl: true } },
-        },
-    });
+    try {
+        return await prisma.lobbyPlayer.create({
+            data: {
+                lobbyId,
+                userId: playerInput.userId ?? null,
+                guestName: playerInput.guestName ?? null,
+                position: playerInput.position ?? '',
+            },
+            include: {
+                user: { select: { id: true, name: true, pictureUrl: true } },
+            },
+        });
+    } catch (error) {
+        if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === 'P2002'
+        ) {
+            throw new AppError('Player is already in this lobby', 409);
+        }
+        throw error;
+    }
 };
 
 export const getLobbyPlayersService = async (lobbyId: string) => {
