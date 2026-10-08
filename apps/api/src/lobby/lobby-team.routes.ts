@@ -6,7 +6,11 @@ import {
 } from '../middleware/auth.middleware';
 import { validateBody, validateParams } from '../middleware/validate';
 import { lobbyIdParamSchema } from './lobby.schemas';
-import { addTeamSchema } from './lobby-team.schemas';
+import {
+    addTeamSchema,
+    teamParamSchema,
+    updateTeamSchema,
+} from './lobby-team.schemas';
 import * as TeamController from './lobby-team.controller';
 
 const router = Router();
@@ -25,6 +29,15 @@ router.get(
     requireAuth,
     validateParams(lobbyIdParamSchema),
     TeamController.listTeams,
+);
+
+router.patch(
+    '/:lobbyId/teams/:teamId',
+    requireAuth,
+    requireRole(...ORGANIZER_ROLES),
+    validateParams(teamParamSchema),
+    validateBody(updateTeamSchema),
+    TeamController.updateTeam,
 );
 
 export default router;

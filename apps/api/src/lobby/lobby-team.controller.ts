@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/AppErrors';
-import { AddTeamInput } from './lobby-team.schemas';
+import {
+    AddTeamInput,
+    UpdateTeamInput,
+    TeamParamInput,
+} from './lobby-team.schemas';
 import * as TeamServices from './lobby-team.services';
 import { LobbyIdParamInput } from './lobby.schemas';
 
@@ -37,6 +41,30 @@ export const listTeams = async (
         const { lobbyId } = req.validatedParams as LobbyIdParamInput;
         const teams = await TeamServices.listTeamsService(lobbyId);
         return res.status(200).json({ message: 'teams', teams });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateTeam = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        if (!req.user)
+            return next(new AppError('Authentication required', 401));
+
+        const { lobbyId, teamId } = req.validatedParams as TeamParamInput;
+
+        const teamName = req.validatedBody as UpdateTeamInput;
+        const team = await TeamServices.updateTeamService(
+            lobbyId,
+            req.user,
+            teamId,
+            teamName,
+        );
+        return res.status(200).json({ message: 'Team name updated', team });
     } catch (error) {
         next(error);
     }

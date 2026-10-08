@@ -1,4 +1,4 @@
-import { AddTeamInput } from './lobby-team.schemas';
+import { AddTeamInput, UpdateTeamInput } from './lobby-team.schemas';
 import { AuthUser } from '../types/auth';
 import { assertLobbyManager } from './lobby-access';
 import { prisma } from '../prisma';
@@ -44,4 +44,28 @@ export const listTeamsService = async (lobbyId: string) => {
     });
 
     return teams;
+};
+
+export const updateTeamService = async (
+    lobbyId: string,
+    actor: AuthUser,
+    teamId: string,
+    teamInput: UpdateTeamInput,
+) => {
+    await assertLobbyManager(lobbyId, actor);
+
+    try {
+        return await prisma.team.update({
+            where: { id: teamId, lobbyId },
+            data: { name: teamInput.name },
+        });
+    } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2002')
+                throw new AppError('A team with that name already exists', 409);
+            if (error.code === 'P2025')
+                throw new AppError('Team not found', 404);
+        }
+        throw error;
+    }
 };
