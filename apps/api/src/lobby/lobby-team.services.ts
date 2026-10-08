@@ -69,3 +69,23 @@ export const updateTeamService = async (
         throw error;
     }
 };
+
+export const deleteTeamService = async (
+    lobbyId: string,
+    actor: AuthUser,
+    teamId: string,
+) => {
+    await assertLobbyManager(lobbyId, actor);
+
+    try {
+        await prisma.team.delete({
+            where: { id: teamId, lobbyId },
+        });
+    } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2025')
+                throw new AppError('Team not found', 404);
+        }
+        throw error;
+    }
+};

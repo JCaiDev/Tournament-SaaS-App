@@ -40,4 +40,12 @@ router.patch(
     TeamController.updateTeam,
 );
 
+router.delete(
+    '/:lobbyId/teams/:teamId',
+    requireAuth,
+    requireRole(...ORGANIZER_ROLES),
+    validateParams(teamParamSchema),
+    TeamController.deleteTeam,
+);
+
 export default router;

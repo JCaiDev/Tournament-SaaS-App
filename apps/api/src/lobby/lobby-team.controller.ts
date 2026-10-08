@@ -69,3 +69,20 @@ export const updateTeam = async (
         next(error);
     }
 };
+
+export const deleteTeam = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        if (!req.user)
+            return next(new AppError('Authentication required', 401));
+
+        const { lobbyId, teamId } = req.validatedParams as TeamParamInput;
+        await TeamServices.deleteTeamService(lobbyId, req.user, teamId);
+        return res.status(204).send();
+    } catch (error) {
+        next(error);
+    }
+};
