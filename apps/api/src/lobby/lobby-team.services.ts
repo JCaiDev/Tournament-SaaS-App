@@ -31,3 +31,17 @@ export const addTeamService = async (
         throw error;
     }
 };
+
+export const listTeamsService = async (lobbyId: string) => {
+    const lobby = await prisma.lobby.findUnique({
+        where: { id: lobbyId },
+    });
+    if (!lobby) throw new AppError('Lobby not found', 404);
+
+    const teams = await prisma.team.findMany({
+        where: { lobbyId },
+        orderBy: { name: 'asc' },
+    });
+
+    return teams;
+};

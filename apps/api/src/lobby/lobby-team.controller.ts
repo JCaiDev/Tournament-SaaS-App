@@ -27,3 +27,17 @@ export const addTeam = async (
         next(error);
     }
 };
+
+export const listTeams = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        const { lobbyId } = req.validatedParams as LobbyIdParamInput;
+        const teams = await TeamServices.listTeamsService(lobbyId);
+        return res.status(200).json({ message: 'teams', teams });
+    } catch (error) {
+        next(error);
+    }
+};

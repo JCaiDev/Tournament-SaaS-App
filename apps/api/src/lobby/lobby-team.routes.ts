@@ -20,4 +20,11 @@ router.post(
     TeamController.addTeam,
 );
 
+router.get(
+    '/:lobbyId/teams',
+    requireAuth,
+    validateParams(lobbyIdParamSchema),
+    TeamController.listTeams,
+);
+
 export default router;
