@@ -166,6 +166,11 @@ a {
   color: #7a6a00;
 }
 
+.badge-tournament {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
 .badge-open {
   background: rgba(31, 168, 90, 0.14);
   color: var(--color-success);

@@ -13,10 +13,11 @@ import {
 } from '../../models/lobby';
 import { AuthService } from '../../services/auth.service';
 import { generateTeams } from '../../shared/team-generator/team-generator';
+import { TournamentTeams } from './tournament-teams/tournament-teams';
 
 @Component({
   selector: 'app-lobby-detail',
-  imports: [RouterLink, DatePipe, CurrencyPipe, ReactiveFormsModule, NgTemplateOutlet],
+  imports: [RouterLink, DatePipe, CurrencyPipe, ReactiveFormsModule, NgTemplateOutlet, TournamentTeams],
   templateUrl: './lobby-detail.html',
   styleUrl: './lobby-detail.css',
 })
@@ -64,6 +65,9 @@ export class LobbyDetail implements OnInit {
   readonly copied = signal(false);
   // Name of the player just bumped from the waitlist, shown briefly.
   readonly promotedName = signal<string | null>(null);
+
+  // Tournaments show saved teams instead of the pickup roster and team maker.
+  readonly isTournament = computed(() => this.lobby()?.format === 'TOURNAMENT');
 
   // Roster cap (null = unlimited).
   readonly cap = computed(() => this.lobby()?.capacity ?? null);

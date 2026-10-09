@@ -30,6 +30,7 @@
       </header>
 
       <div class="badges">
+        @if (isTournament()) { <span class="badge badge-tournament">Tournament</span> }
         <span class="badge badge-skill">{{ skillLabel }}</span>
         <span class="badge badge-gender">{{ genderLabel }}</span>
         @if (l.allowToApply) {
@@ -51,7 +52,7 @@
           <dd>{{ skillLabel }}</dd>
         </div>
         <div class="fact">
-          <dt>Format</dt>
+          <dt>Division</dt>
           <dd>{{ genderLabel }}</dd>
         </div>
       </dl>
@@ -97,6 +98,8 @@
           </div>
 
           <div class="tool-grid">
+            <!-- Roster cap and registration are pickup-only for now. -->
+            @if (!isTournament()) {
             <div class="tool">
               <span class="tool-label">Roster cap</span>
               @if (cap()) {
@@ -141,6 +144,7 @@
                 {{ lobby()?.allowToApply ? 'Open' : 'Closed' }}
               </button>
             </div>
+            }
 
             <div class="tool">
               <span class="tool-label">Invite</span>
@@ -152,6 +156,10 @@
         </section>
       }
 
+      @if (isTournament()) {
+        <!-- Tournaments: saved teams from the API instead of the pickup roster. -->
+        <app-tournament-teams [lobbyId]="l.id" [canManage]="canManage()" />
+      } @else {
       <section class="roster">
         <div class="summary">
           <div class="summary-card">
@@ -463,6 +471,7 @@
             </div>
           }
         </section>
+      }
       }
 
       <ng-template #playerRow let-p let-seed="seed">
