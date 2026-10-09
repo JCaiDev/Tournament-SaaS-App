@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SkillLevel } from '@prisma/client';
+import { SkillLevel, LobbyFormat } from '@prisma/client';
 import { GenderFormat } from '@prisma/client';
 
 const lobbyBaseSchema = z.object({
@@ -14,6 +14,7 @@ const lobbyBaseSchema = z.object({
 });
 
 export const createLobbySchema = lobbyBaseSchema
+    .extend({ format: z.enum(LobbyFormat) })
     .refine((d) => d.endTime > d.startTime, {
         message: 'End time must be after start time',
         path: ['endTime'],

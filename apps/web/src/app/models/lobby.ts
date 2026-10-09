@@ -4,6 +4,8 @@
 export type SkillLevel = 'OPEN' | 'INTERMEDIATE' | 'INTERMEDIATE_PLUS';
 export type GenderFormat = 'MENS' | 'WOMENS' | 'COED';
 export type Role = 'ADMIN' | 'ORGANIZER' | 'PLAYER';
+// Set once when the lobby is created; the API ignores it on update.
+export type LobbyFormat = 'PICKUP' | 'TOURNAMENT';
 
 // Mirrors the API's ORGANIZER_ROLES: who may create and manage lobbies.
 // Display only; the API enforces it.
@@ -27,6 +29,7 @@ export interface Lobby {
   skillLevel: SkillLevel;
   genderFormat: GenderFormat;
   allowToApply: boolean;
+  format: LobbyFormat;
   // Max players on the active roster; null means no cap (unlimited).
   capacity: number | null;
   createdAt: string;
@@ -53,6 +56,7 @@ export interface CreateLobbyRequest {
   skillLevel: SkillLevel;
   genderFormat: GenderFormat;
   allowToApply: boolean;
+  format: LobbyFormat; // required by POST /lobbies
   capacity: number | null;
 }
 
@@ -68,7 +72,8 @@ export const GENDER_LABELS: Record<GenderFormat, string> = {
   COED: 'Co-ed',
 };
 
-export type UpdateLobbyRequest = Partial<CreateLobbyRequest>;
+// format can't change after creation, so it isn't part of an update.
+export type UpdateLobbyRequest = Partial<Omit<CreateLobbyRequest, 'format'>>;
 
 // ---- Lobby players ----
 

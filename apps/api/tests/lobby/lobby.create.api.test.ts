@@ -11,7 +11,8 @@ import { app } from '../../src/app';
 import { resetDb, disconnectDb } from '../helpers/db';
 import { seedUser } from '../helpers/users';
 import { makeAuthHeader } from '../helpers/auth';
-import { Role, SkillLevel, GenderFormat } from '@prisma/client';
+import { prisma } from '../../src/prisma';
+import { Role, SkillLevel, GenderFormat, LobbyFormat } from '@prisma/client';
 
 // A helper that builds a VALID request body every time.
 // Dates are computed relative to "now" so `startTime` is always in the future
@@ -26,6 +27,7 @@ function validLobbyBody() {
         skillLevel: SkillLevel.OPEN,
         genderFormat: GenderFormat.COED,
         allowToApply: true,
+        format: LobbyFormat.PICKUP,
     };
 }
 
@@ -107,5 +109,59 @@ describe('POST /lobbies (Create Lobby)', () => {
 
         // ASSERT
         expect(res.status).toBe(400);
+    });
+
+    // ---------- FORMAT ----------
+
+    it('Happy Path: format TOURNAMENT -> 201, saved and returned', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+
+        // ACT
+        const res = await request(app)
+            .post('/lobbies')
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({ ...validLobbyBody(), format: LobbyFormat.TOURNAMENT });
+
+        // ASSERT
+        expect(res.status).toBe(201);
+        expect(res.body.lobby.format).toBe(LobbyFormat.TOURNAMENT);
+
+        const saved = await prisma.lobby.findUnique({
+            where: { id: res.body.lobby.id },
+        });
+        expect(saved?.format).toBe(LobbyFormat.TOURNAMENT);
+    });
+
+    // format is required: the client must say which kind of lobby it means.
+    it('Sad Path: missing format -> 400, nothing saved', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const { format: _format, ...bodyWithoutFormat } = validLobbyBody();
+
+        // ACT
+        const res = await request(app)
+            .post('/lobbies')
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send(bodyWithoutFormat);
+
+        // ASSERT
+        expect(res.status).toBe(400);
+        expect(await prisma.lobby.count()).toBe(0);
+    });
+
+    it('Sad Path: unknown format -> 400, nothing saved', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+
+        // ACT
+        const res = await request(app)
+            .post('/lobbies')
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({ ...validLobbyBody(), format: 'BANANA' });
+
+        // ASSERT
+        expect(res.status).toBe(400);
+        expect(await prisma.lobby.count()).toBe(0);
     });
 });

@@ -1,0 +1,28 @@
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+.back-link:hover {
+  color: var(--color-primary);
+}
+
+.form-icon {
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: rgba(35, 87, 137, 0.1);
+  color: var(--color-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.form-icon-tournament {
+  background: rgba(241, 211, 2, 0.22);
+  color: #7a6a00;
+}

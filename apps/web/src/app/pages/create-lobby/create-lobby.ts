@@ -1,14 +1,16 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { LobbyService } from '../../services/lobby.service';
-import { CreateLobbyRequest, GenderFormat, GENDER_LABELS, SkillLevel, SKILL_LABELS } from '../../models/lobby';
+import { CreateLobbyRequest, GenderFormat, GENDER_LABELS, LobbyFormat, SkillLevel, SKILL_LABELS } from '../../models/lobby';
 import { DatetimePicker } from '../../shared/datetime-picker/datetime-picker';
+import { FormatIcon } from '../../shared/format-icon/format-icon';
+import { LOBBY_FORMATS } from '../../shared/format-icon/lobby-formats';
 
 @Component({
     selector: 'app-create-lobby',
-    imports: [ReactiveFormsModule, DatetimePicker],
+    imports: [ReactiveFormsModule, RouterLink, DatetimePicker, FormatIcon],
     templateUrl: './create-lobby.html',
     styleUrl: './create-lobby.css',
 })
@@ -17,6 +19,12 @@ export class CreateLobby {
     private readonly fb = inject(FormBuilder);
     private readonly lobbyService = inject(LobbyService);
     private readonly router = inject(Router);
+
+    // Set by the route (/lobbies/new/pickup or /lobbies/new/tournament), never by the user,
+    // so the form can't be submitted without a format.
+    readonly format: LobbyFormat = inject(ActivatedRoute).snapshot.data['format'];
+    readonly copy = LOBBY_FORMATS[this.format];
+    readonly isTournament = this.format === 'TOURNAMENT';
 
     readonly submitting = signal(false);
     readonly serverError = signal<string | null>(null);
@@ -46,7 +54,10 @@ export class CreateLobby {
         const raw = this.form.getRawValue();
         const payload: CreateLobbyRequest = {
             ...raw,
-            capacity: raw.capacity > 0 ? raw.capacity : null,
+            format: this.format,
+            // Tournament teams are entered by the organizer, so players don't apply (yet).
+            allowToApply: this.isTournament ? false : raw.allowToApply,
+            capacity: !this.isTournament && raw.capacity > 0 ? raw.capacity : null,
         };
         this.lobbyService.createLobby(payload).subscribe({
             next: (lobby) => this.router.navigate(['/lobbies', lobby.id]),

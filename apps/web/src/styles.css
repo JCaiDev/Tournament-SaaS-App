@@ -387,3 +387,20 @@ a {
     animation: none !important;
   }
 }
+
+/* ---------- Page transitions (withViewTransitions in app.config.ts) ---------- */
+
+/* Elements with a matching view-transition-name (e.g. a "new lobby" card and
+   its form) morph between pages; everything else cross-fades. */
+::view-transition-group(*) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
