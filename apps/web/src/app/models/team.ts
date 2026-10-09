@@ -3,11 +3,20 @@ export interface Team {
   id: string;
   lobbyId: string;
   name: string;
+  captainName: string | null; // null = no captain entered
 }
 
-// POST /lobbies/:lobbyId/teams and PATCH /lobbies/:lobbyId/teams/:teamId
-export interface TeamRequest {
+// POST /lobbies/:lobbyId/teams — captain is optional.
+export interface AddTeamRequest {
   name: string;
+  captainName?: string;
+}
+
+// PATCH /lobbies/:lobbyId/teams/:teamId — send only what changed.
+// A missing field is left alone; captainName: null removes the captain.
+export interface UpdateTeamRequest {
+  name?: string;
+  captainName?: string | null;
 }
 
 // GET /lobbies/:lobbyId/teams — sorted by name

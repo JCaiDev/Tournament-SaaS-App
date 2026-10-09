@@ -7,13 +7,13 @@ export const addTeamSchema = z.object({
         .trim()
         .overwrite((s) => s.replace(/\s+/g, ' '))
         .min(1)
-        .max(50),
+        .max(25),
     captainName: z
         .string()
         .trim()
         .overwrite((s) => s.replace(/\s+/g, ' '))
         .min(1)
-        .max(50)
+        .max(25)
         .optional(),
 });
 
@@ -24,14 +24,14 @@ export const updateTeamSchema = z
             .trim()
             .overwrite((s) => s.replace(/\s+/g, ' '))
             .min(1)
-            .max(50)
+            .max(25)
             .optional(),
         captainName: z
             .string()
             .trim()
             .overwrite((s) => s.replace(/\s+/g, ' '))
             .min(1)
-            .max(50)
+            .max(25)
             .optional()
             .nullable(),
     })

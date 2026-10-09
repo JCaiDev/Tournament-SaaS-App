@@ -81,15 +81,46 @@
   font-size: 0.85rem;
 }
 
-.team-name {
-  flex: 1 1 auto;
+/* One line always. Names over 18 characters drop a size so a full 25-character
+   name still fits the narrowest card; the ellipsis is only a safety net for
+   names saved before the cap (or very wide letters like "WWW"). */
+/* Name with the captain underneath; takes the row's free space. */
+.team-info {
+  flex: 1 1 0;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.team-name {
   font-weight: 600;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-captain {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Edit mode: name and captain inputs stacked. */
+.team-edit {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.team-name-long {
+  font-size: 0.85rem;
 }
 
 .team-input {
-  flex: 1 1 140px;
   min-width: 0;
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--color-primary);
@@ -99,11 +130,24 @@
   color: var(--color-foreground);
 }
 
+/* Phones: one full-width column, actions pushed to the right of the name. */
 .team-actions {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   margin-left: auto;
+}
+
+/* Tablet and up: the cards are narrower (several per row), so actions always
+   get their own line, lined up under the team name (seed width + row gap), and
+   every card looks the same however long the name is. The negative margin
+   cancels the buttons' own padding so "Rename" starts flush with the name. */
+@media (min-width: 641px) {
+  .team-actions {
+    flex-basis: 100%;
+    padding-left: calc(1.8rem + var(--space-md));
+    margin-left: -0.3rem;
+  }
 }
 
 .row-error {
@@ -161,6 +205,13 @@
   letter-spacing: 0.08em;
   color: var(--color-muted);
   font-weight: 700;
+}
+
+.add-field em {
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
 }
 
 .add-field input {

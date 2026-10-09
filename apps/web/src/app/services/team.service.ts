@@ -2,7 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Team, TeamListResponse, TeamRequest, TeamResponse } from '../models/team';
+import {
+  AddTeamRequest,
+  Team,
+  TeamListResponse,
+  TeamResponse,
+  UpdateTeamRequest,
+} from '../models/team';
 
 // Talks to the tournament team endpoints. Writes are organizer/admin only and
 // the API also checks the caller organizes *that* lobby; the UI just hides the buttons.
@@ -20,14 +26,14 @@ export class TeamService {
   }
 
   /** POST /lobbies/:lobbyId/teams — 409 if the name is taken in this lobby. */
-  addTeam(lobbyId: string, data: TeamRequest): Observable<Team> {
+  addTeam(lobbyId: string, data: AddTeamRequest): Observable<Team> {
     return this.http
       .post<TeamResponse>(`${this.baseUrl}/${lobbyId}/teams`, data)
       .pipe(map((res) => res.team));
   }
 
-  /** PATCH /lobbies/:lobbyId/teams/:teamId — rename; 404 if the team isn't in this lobby. */
-  renameTeam(lobbyId: string, teamId: string, data: TeamRequest): Observable<Team> {
+  /** PATCH /lobbies/:lobbyId/teams/:teamId — name and/or captain; 404 if the team isn't in this lobby. */
+  updateTeam(lobbyId: string, teamId: string, data: UpdateTeamRequest): Observable<Team> {
     return this.http
       .patch<TeamResponse>(`${this.baseUrl}/${lobbyId}/teams/${teamId}`, data)
       .pipe(map((res) => res.team));

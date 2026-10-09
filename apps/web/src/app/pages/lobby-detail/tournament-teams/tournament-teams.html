@@ -21,35 +21,48 @@
             <span class="team-seed">{{ i + 1 }}</span>
 
             @if (editingId() === team.id) {
-              <input
-                #renameInput
-                class="team-input"
-                [formControl]="editName"
-                [attr.maxlength]="nameMax"
-                (keydown)="onRenameKeydown($event, team)"
-                aria-label="Team name"
-              />
+              <div class="team-edit" [formGroup]="editForm" (keydown)="onEditKeydown($event, team)">
+                <input
+                  #editNameInput
+                  class="team-input"
+                  formControlName="name"
+                  [attr.maxlength]="nameMax"
+                  aria-label="Team name"
+                />
+                <input
+                  class="team-input"
+                  formControlName="captainName"
+                  [attr.maxlength]="nameMax"
+                  placeholder="Captain (optional)"
+                  aria-label="Captain name"
+                />
+              </div>
               <div class="team-actions">
                 <button
                   type="button"
                   class="btn btn-primary btn-sm"
-                  (click)="saveRename(team)"
-                  [disabled]="savingId() === team.id || editName.invalid"
+                  (click)="saveEdit(team)"
+                  [disabled]="savingId() === team.id || editForm.invalid"
                 >
                   {{ savingId() === team.id ? 'Saving…' : 'Save' }}
                 </button>
-                <button type="button" class="text-btn" (click)="cancelRename()">Cancel</button>
+                <button type="button" class="text-btn" (click)="cancelEdit()">Cancel</button>
               </div>
             } @else {
-              <span class="team-name">{{ team.name }}</span>
+              <div class="team-info">
+                <span class="team-name" [class.team-name-long]="team.name.length > 18" [title]="team.name">{{ team.name }}</span>
+                @if (team.captainName) {
+                  <span class="team-captain" [title]="team.captainName">Captain: {{ team.captainName }}</span>
+                }
+              </div>
               @if (canManage()) {
                 <div class="team-actions">
                   <button
                     type="button"
                     class="text-btn"
-                    (click)="startRename(team)"
+                    (click)="startEdit(team)"
                     [disabled]="savingId() === team.id"
-                  >Rename</button>
+                  >Edit</button>
                   <button
                     type="button"
                     class="text-btn text-btn-danger"
@@ -78,6 +91,15 @@
             formControlName="name"
             [attr.maxlength]="nameMax"
             placeholder="e.g. Spike Force"
+          />
+        </label>
+        <label class="add-field">
+          <span>Captain <em>(optional)</em></span>
+          <input
+            type="text"
+            formControlName="captainName"
+            [attr.maxlength]="nameMax"
+            placeholder="e.g. Serena"
           />
         </label>
         <button type="submit" class="btn btn-primary" [disabled]="adding()">
