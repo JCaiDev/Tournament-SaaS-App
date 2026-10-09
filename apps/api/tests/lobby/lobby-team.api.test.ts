@@ -64,16 +64,16 @@ describe('POST /lobbies/:lobbyId/teams (Add Team)', () => {
         const res = await request(app)
             .post(`/lobbies/${lobby.id}/teams`)
             .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
-            .send({ name: 'Spike Force', captainName: ' Jackie ' });
+            .send({ name: 'Spike Force', captainName: ' Jeffrey ' });
 
         // ASSERT
         expect(res.status).toBe(201);
-        expect(res.body.team.captainName).toBe('Jackie');
+        expect(res.body.team.captainName).toBe('Jeffrey');
 
         const saved = await prisma.team.findUnique({
             where: { id: res.body.team.id },
         });
-        expect(saved?.captainName).toBe('Jackie');
+        expect(saved?.captainName).toBe('Jeffrey');
     });
 
     it('Sad Path: organizer of another lobby -> 403', async () => {
