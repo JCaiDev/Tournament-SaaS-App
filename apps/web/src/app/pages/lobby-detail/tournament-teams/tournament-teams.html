@@ -1,0 +1,91 @@
+<section class="teams">
+  <h3 class="teams-title">
+    Teams
+    @if (!loading() && !loadError()) { <span class="teams-count">{{ teams().length }}</span> }
+  </h3>
+
+  @if (loading()) {
+    <p class="muted">Loading teams…</p>
+  } @else if (loadError()) {
+    <p class="error">{{ loadError() }}</p>
+  } @else {
+    @if (teams().length === 0) {
+      <p class="muted">
+        @if (canManage()) { No teams yet. Add the first one below. }
+        @else { Teams will show up here once the organizer adds them. }
+      </p>
+    } @else {
+      <ol class="team-list">
+        @for (team of teams(); track team.id; let i = $index) {
+          <li class="team-row" [class.team-row-busy]="savingId() === team.id">
+            <span class="team-seed">{{ i + 1 }}</span>
+
+            @if (editingId() === team.id) {
+              <input
+                #renameInput
+                class="team-input"
+                [formControl]="editName"
+                [attr.maxlength]="nameMax"
+                (keydown)="onRenameKeydown($event, team)"
+                aria-label="Team name"
+              />
+              <div class="team-actions">
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  (click)="saveRename(team)"
+                  [disabled]="savingId() === team.id || editName.invalid"
+                >
+                  {{ savingId() === team.id ? 'Saving…' : 'Save' }}
+                </button>
+                <button type="button" class="text-btn" (click)="cancelRename()">Cancel</button>
+              </div>
+            } @else {
+              <span class="team-name">{{ team.name }}</span>
+              @if (canManage()) {
+                <div class="team-actions">
+                  <button
+                    type="button"
+                    class="text-btn"
+                    (click)="startRename(team)"
+                    [disabled]="savingId() === team.id"
+                  >Rename</button>
+                  <button
+                    type="button"
+                    class="text-btn text-btn-danger"
+                    (click)="deleteTeam(team)"
+                    [disabled]="savingId() === team.id"
+                  >Delete</button>
+                </div>
+              }
+            }
+
+            @if (rowError()?.id === team.id) {
+              <p class="error row-error">{{ rowError()?.message }}</p>
+            }
+          </li>
+        }
+      </ol>
+    }
+
+    @if (canManage()) {
+      <form class="add-team" [formGroup]="addForm" (ngSubmit)="addTeam()">
+        <label class="add-field">
+          <span>Team name</span>
+          <input
+            #addInput
+            type="text"
+            formControlName="name"
+            [attr.maxlength]="nameMax"
+            placeholder="e.g. Spike Force"
+          />
+        </label>
+        <button type="submit" class="btn btn-primary" [disabled]="adding()">
+          {{ adding() ? 'Adding…' : 'Add team' }}
+        </button>
+      </form>
+      @if (addError()) { <p class="error">{{ addError() }}</p> }
+      <p class="hint">Teams are saved as you go. Press Enter to add the next one.</p>
+    }
+  }
+</section>
