@@ -1,14 +1,27 @@
 <section class="auth-wrap">
-  <div class="auth-card">
-    <div class="auth-head"><h1>Organize a game</h1><p class="sub">Create a lobby for players to find.</p></div>
+  <!-- view-transition names match the chooser card this form was opened from. -->
+  <div class="auth-card" [style.view-transition-name]="'lobby-card-' + copy.slug">
+    <a routerLink="/lobbies/new" class="back-link"><span aria-hidden="true">←</span> Change type</a>
+
+    <div class="auth-head">
+      <span
+        class="form-icon"
+        [class.form-icon-tournament]="isTournament"
+        [style.view-transition-name]="'lobby-icon-' + copy.slug"
+      >
+        <app-format-icon [format]="format" />
+      </span>
+      <h1>{{ copy.formTitle }}</h1>
+      <p class="sub">{{ copy.formSub }}</p>
+    </div>
 
     @if (serverError()) { <div class="notice notice-error" role="alert">{{ serverError() }}</div> }
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div class="field">
-        <label for="lobbyName">Lobby name</label>
+        <label for="lobbyName">{{ copy.nameLabel }}</label>
         <input id="lobbyName" class="input" formControlName="lobbyName" />
-        @if (form.controls.lobbyName.touched && form.controls.lobbyName.invalid) { <p class="field-error">3–30 characters.</p> }
+        @if (form.controls.lobbyName.touched && form.controls.lobbyName.invalid) { <p class="field-error">3–35 characters.</p> }
       </div>
 
       <div class="field">
@@ -19,24 +32,26 @@
 
       <div class="field">
         <label for="startTime">Start time</label>
-        <app-datetime-picker formControlName="startTime" />
+        <app-datetime-picker formControlName="startTime" defaultTime="09:00" />
       </div>
 
       <div class="field">
         <label for="endTime">End time</label>
-        <app-datetime-picker formControlName="endTime" />
+        <app-datetime-picker formControlName="endTime" defaultTime="17:00" />
       </div>
 
       <div class="field">
-        <label for="price">Price (CAD)</label>
+        <label for="price">{{ copy.priceLabel }}</label>
         <input id="price" type="number" min="0" class="input" formControlName="price" />
       </div>
 
-      <div class="field">
-        <label for="capacity">Roster cap</label>
-        <input id="capacity" type="number" min="0" class="input" formControlName="capacity" />
-        <p class="field-hint">Max players on the roster. Use 0 for no limit — extras join a waitlist.</p>
-      </div>
+      @if (!isTournament) {
+        <div class="field">
+          <label for="capacity">Roster cap</label>
+          <input id="capacity" type="number" min="0" class="input" formControlName="capacity" />
+          <p class="field-hint">Max players on the roster. Use 0 for no limit — extras join a waitlist.</p>
+        </div>
+      }
 
       <div class="field">
         <label for="skillLevel">Skill level</label>
@@ -46,18 +61,20 @@
       </div>
 
       <div class="field">
-        <label for="genderFormat">Format</label>
+        <label for="genderFormat">Division</label>
         <select id="genderFormat" class="input" formControlName="genderFormat">
           @for (opt of genderOptions; track opt[0]) { <option [value]="opt[0]">{{ opt[1] }}</option> }
         </select>
       </div>
 
-      <div class="field">
-        <label><input type="checkbox" formControlName="allowToApply" /> Accepting players</label>
-      </div>
+      @if (!isTournament) {
+        <div class="field">
+          <label><input type="checkbox" formControlName="allowToApply" /> Accepting players</label>
+        </div>
+      }
 
       <button type="submit" class="btn btn-primary submit" [disabled]="submitting()">
-        {{ submitting() ? 'Creating…' : 'Create lobby' }}
+        {{ submitting() ? 'Creating…' : (isTournament ? 'Create tournament' : 'Create game') }}
       </button>
     </form>
   </div>

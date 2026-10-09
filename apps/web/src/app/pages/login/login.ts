@@ -3,6 +3,8 @@ import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
+import { ORGANIZER_ROLES } from '../../models/lobby';
+import { PrivateUser } from '../../models/user';
 import { GoogleAuthService } from '../../services/google-auth.service';
 
 @Component({
@@ -48,9 +50,9 @@ export class Login {
 
     this.submitting.set(true);
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: () => {
+      next: (user) => {
         this.submitting.set(false);
-        this.router.navigate(['/']);
+        this.goToLanding(user);
       },
       error: (err: HttpErrorResponse) => {
         this.submitting.set(false);
@@ -68,8 +70,13 @@ export class Login {
   private onGoogle(idToken: string): void {
     this.googleError.set(null);
     this.auth.googleLogin(idToken).subscribe({
-      next: () => this.router.navigate(['/']),
+      next: (user) => this.goToLanding(user),
       error: () => this.googleError.set('Google sign-in failed. Try again.'),
     });
+  }
+
+  // Organizers start at "what are you running?"; everyone else at the lobby list.
+  private goToLanding(user: PrivateUser): void {
+    this.router.navigate([ORGANIZER_ROLES.includes(user.role) ? '/lobbies/new' : '/']);
   }
 }

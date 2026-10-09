@@ -6,11 +6,12 @@ import {
   computed,
   forwardRef,
   inject,
+  input,
   signal,
   viewChild,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { anchorIndex, nextIndex } from './time-list';
+import { DEFAULT_ANCHOR, anchorIndex, nextIndex } from './time-list';
 
 // About 8 rows fit in the open list (see --dt-visible-rows in the CSS).
 const PAGE_SIZE = 8;
@@ -39,6 +40,9 @@ const BASE_TIME_OPTIONS: TimeOption[] = buildTimeOptions();
   ],
 })
 export class DatetimePicker implements ControlValueAccessor {
+  // "HH:mm" the time list opens on while the field is empty.
+  readonly defaultTime = input(DEFAULT_ANCHOR);
+
   readonly date = signal('');
   readonly time = signal('');
   readonly disabled = signal(false);
@@ -120,7 +124,7 @@ export class DatetimePicker implements ControlValueAccessor {
   openList(): void {
     if (this.disabled()) return;
     const values = this.timeOptions().map((o) => o.value);
-    this.activeIndex.set(anchorIndex(values, this.time()));
+    this.activeIndex.set(anchorIndex(values, this.time(), this.defaultTime()));
     this.open.set(true);
 
     // The list doesn't exist until Angular renders it, so scroll after that render.

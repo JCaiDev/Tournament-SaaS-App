@@ -1,0 +1,26 @@
+<section class="choose-wrap">
+  <header class="choose-head">
+    <h1>What are you running?</h1>
+    <p class="sub">Pick one to get started.</p>
+  </header>
+
+  <div class="choose-grid">
+    @for (opt of options; track opt.format) {
+      <!-- The view-transition names match the create form's card and icon,
+           so the browser morphs this card into the form on click. -->
+      <a
+        class="choose-card"
+        [class.choose-card-tournament]="opt.format === 'TOURNAMENT'"
+        [routerLink]="['/lobbies/new', opt.slug]"
+        [style.view-transition-name]="'lobby-card-' + opt.slug"
+      >
+        <span class="choose-icon" [style.view-transition-name]="'lobby-icon-' + opt.slug">
+          <app-format-icon [format]="opt.format" />
+        </span>
+        <h2>{{ opt.cardTitle }}</h2>
+        <p>{{ opt.cardDescription }}</p>
+        <span class="choose-cta">Get started <span aria-hidden="true">→</span></span>
+      </a>
+    }
+  </div>
+</section>
