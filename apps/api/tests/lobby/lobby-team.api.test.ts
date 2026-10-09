@@ -50,6 +50,30 @@ describe('POST /lobbies/:lobbyId/teams (Add Team)', () => {
             where: { id: res.body.team.id },
         });
         expect(saved?.name).toBe('Spike Force');
+        expect(saved?.captainName).toBeNull();
+    });
+
+    it('Happy Path: team with a captain -> 201, captain saved', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id, {
+            format: LobbyFormat.TOURNAMENT,
+        });
+
+        // ACT
+        const res = await request(app)
+            .post(`/lobbies/${lobby.id}/teams`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({ name: 'Spike Force', captainName: ' Jackie ' });
+
+        // ASSERT
+        expect(res.status).toBe(201);
+        expect(res.body.team.captainName).toBe('Jackie');
+
+        const saved = await prisma.team.findUnique({
+            where: { id: res.body.team.id },
+        });
+        expect(saved?.captainName).toBe('Jackie');
     });
 
     it('Sad Path: organizer of another lobby -> 403', async () => {

@@ -203,4 +203,117 @@ describe('PATCH /lobbies/:lobbyId/teams/:teamId (Update Team)', () => {
         const saved = await prisma.team.findUnique({ where: { id: team.id } });
         expect(saved?.name).toBe('Spike Force');
     });
+
+    // PATCH only touches the fields that were sent: a missing field
+    // (undefined) is left alone, null clears it.
+    it('Happy Path: captain only -> 200, captain set, name unchanged', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id, {
+            format: LobbyFormat.TOURNAMENT,
+        });
+        const team = await prisma.team.create({
+            data: { lobbyId: lobby.id, name: 'Spike Force' },
+        });
+
+        // ACT
+        const res = await request(app)
+            .patch(`/lobbies/${lobby.id}/teams/${team.id}`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({ captainName: '  Jackie   Dai ' });
+
+        // ASSERT
+        expect(res.status).toBe(200);
+        expect(res.body.team.captainName).toBe('Jackie Dai');
+
+        const saved = await prisma.team.findUnique({ where: { id: team.id } });
+        expect(saved?.captainName).toBe('Jackie Dai');
+        expect(saved?.name).toBe('Spike Force');
+    });
+
+    it('Happy Path: name only -> 200, existing captain kept', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id, {
+            format: LobbyFormat.TOURNAMENT,
+        });
+        const team = await prisma.team.create({
+            data: {
+                lobbyId: lobby.id,
+                name: 'Spike Force',
+                captainName: 'Jackie',
+            },
+        });
+
+        // ACT
+        const res = await request(app)
+            .patch(`/lobbies/${lobby.id}/teams/${team.id}`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({ name: 'Block Party' });
+
+        // ASSERT
+        expect(res.status).toBe(200);
+
+        const saved = await prisma.team.findUnique({ where: { id: team.id } });
+        expect(saved?.name).toBe('Block Party');
+        expect(saved?.captainName).toBe('Jackie');
+    });
+
+    it('Happy Path: captainName null -> 200, captain removed', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id, {
+            format: LobbyFormat.TOURNAMENT,
+        });
+        const team = await prisma.team.create({
+            data: {
+                lobbyId: lobby.id,
+                name: 'Spike Force',
+                captainName: 'Jackie',
+            },
+        });
+
+        // ACT
+        const res = await request(app)
+            .patch(`/lobbies/${lobby.id}/teams/${team.id}`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({ captainName: null });
+
+        // ASSERT
+        expect(res.status).toBe(200);
+        expect(res.body.team.captainName).toBeNull();
+
+        const saved = await prisma.team.findUnique({ where: { id: team.id } });
+        expect(saved?.captainName).toBeNull();
+        expect(saved?.name).toBe('Spike Force');
+    });
+
+    it('Sad Path: empty body -> 400, team unchanged', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id, {
+            format: LobbyFormat.TOURNAMENT,
+        });
+        const team = await prisma.team.create({
+            data: {
+                lobbyId: lobby.id,
+                name: 'Spike Force',
+                captainName: 'Jackie',
+            },
+        });
+
+        // ACT
+        const res = await request(app)
+            .patch(`/lobbies/${lobby.id}/teams/${team.id}`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({});
+
+        // ASSERT
+        expect(res.status).toBe(400);
+        expect(res.body.error.message).toBe('Invalid request body');
+
+        const saved = await prisma.team.findUnique({ where: { id: team.id } });
+        expect(saved?.name).toBe('Spike Force');
+        expect(saved?.captainName).toBe('Jackie');
+    });
 });

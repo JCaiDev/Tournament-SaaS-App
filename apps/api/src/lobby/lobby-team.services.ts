@@ -19,6 +19,7 @@ export const addTeamService = async (
             data: {
                 lobbyId,
                 name: teamInput.name,
+                captainName: teamInput.captainName,
             },
         });
     } catch (error) {
@@ -57,7 +58,7 @@ export const updateTeamService = async (
     try {
         return await prisma.team.update({
             where: { id: teamId, lobbyId },
-            data: { name: teamInput.name },
+            data: { name: teamInput.name, captainName: teamInput.captainName },
         });
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {

@@ -8,16 +8,39 @@ export const addTeamSchema = z.object({
         .overwrite((s) => s.replace(/\s+/g, ' '))
         .min(1)
         .max(50),
-});
-
-export const updateTeamSchema = z.object({
-    name: z
+    captainName: z
         .string()
         .trim()
         .overwrite((s) => s.replace(/\s+/g, ' '))
         .min(1)
-        .max(50),
+        .max(50)
+        .optional(),
 });
+
+export const updateTeamSchema = z
+    .object({
+        name: z
+            .string()
+            .trim()
+            .overwrite((s) => s.replace(/\s+/g, ' '))
+            .min(1)
+            .max(50)
+            .optional(),
+        captainName: z
+            .string()
+            .trim()
+            .overwrite((s) => s.replace(/\s+/g, ' '))
+            .min(1)
+            .max(50)
+            .optional()
+            .nullable(),
+    })
+    .refine(
+        (data) => data.name !== undefined || data.captainName !== undefined,
+        {
+            message: 'Provide Team Name or Captain Name',
+        },
+    );
 
 export const teamIdSchema = z
     .string()

@@ -51,6 +51,7 @@ model Team {
   name          String
   lobby         Lobby         @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
   rosterEntries RosterEntry[]
+  captainName   String?
 
   @@unique([lobbyId, name])
 }
