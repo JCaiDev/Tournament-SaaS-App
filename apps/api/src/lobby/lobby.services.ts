@@ -15,6 +15,7 @@ export const publicLobbySelect = {
     genderFormat: true,
     allowToApply: true,
     createdAt: true,
+    format: true,
     organizer: { select: publicUserSelect },
 } satisfies Prisma.LobbySelect;
 

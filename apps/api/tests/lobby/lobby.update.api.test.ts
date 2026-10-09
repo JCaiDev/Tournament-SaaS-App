@@ -5,7 +5,7 @@ import { resetDb, disconnectDb } from '../helpers/db';
 import { seedUser } from '../helpers/users';
 import { seedLobby } from '../helpers/lobby';
 import { makeAuthHeader } from '../helpers/auth';
-import { Role, SkillLevel, GenderFormat } from '@prisma/client';
+import { Role, SkillLevel, GenderFormat, LobbyFormat } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { prisma } from '../../src/prisma';
 
@@ -145,5 +145,32 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
 
         // ASSERT
         expect(res.status).toBe(400);
+    });
+
+    // format is set once at creation. updateLobbySchema doesn't include it,
+    // so Zod strips it: flipping a tournament with teams to PICKUP would
+    // leave its teams and schedule orphaned.
+    it('Format is fixed: PATCH with format is ignored -> 200, format unchanged', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id, {
+            format: LobbyFormat.TOURNAMENT,
+        });
+
+        // ACT
+        const res = await request(app)
+            .patch(`/lobbies/${lobby.id}`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({ price: 15, format: LobbyFormat.PICKUP });
+
+        // ASSERT
+        expect(res.status).toBe(200);
+        expect(res.body.lobby.price).toBe(15);
+        expect(res.body.lobby.format).toBe(LobbyFormat.TOURNAMENT);
+
+        const saved = await prisma.lobby.findUnique({
+            where: { id: lobby.id },
+        });
+        expect(saved?.format).toBe(LobbyFormat.TOURNAMENT);
     });
 });
