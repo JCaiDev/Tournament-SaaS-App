@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,6 +8,10 @@ import { CreateLobbyRequest, GenderFormat, GENDER_LABELS, LobbyFormat, SkillLeve
 import { DatetimePicker } from '../../shared/datetime-picker/datetime-picker';
 import { FormatIcon } from '../../shared/format-icon/format-icon';
 import { LOBBY_FORMATS } from '../../shared/format-icon/lobby-formats';
+import { addHours } from '../../shared/datetime-picker/local-datetime';
+
+// How long a lobby usually runs; used to pre-fill the end time.
+const DEFAULT_HOURS: Record<LobbyFormat, number> = { PICKUP: 2, TOURNAMENT: 6 };
 
 @Component({
     selector: 'app-create-lobby',
@@ -43,6 +48,25 @@ export class CreateLobby {
         allowToApply: [true],
         capacity: [0, [Validators.min(0)]],
     })
+
+    // True once the organizer picks an end time themselves; from then on we stop
+    // overwriting it. Clearing the end time hands control back to the auto-fill.
+    private endEdited = false;
+
+    constructor() {
+        const { startTime, endTime } = this.form.controls;
+
+        // Our own setValue below uses emitEvent: false, so only the organizer's
+        // changes reach this subscription.
+        endTime.valueChanges.pipe(takeUntilDestroyed()).subscribe((end) => {
+            this.endEdited = end !== '';
+        });
+
+        startTime.valueChanges.pipe(takeUntilDestroyed()).subscribe((start) => {
+            if (!start || this.endEdited) return;
+            endTime.setValue(addHours(start, DEFAULT_HOURS[this.format]), { emitEvent: false });
+        });
+    }
 
     submit(): void {
         this.serverError.set(null);
