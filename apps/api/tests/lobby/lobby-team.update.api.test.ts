@@ -268,8 +268,8 @@ describe('PATCH /lobbies/:lobbyId/teams/:teamId (Update Team)', () => {
         const team = await prisma.team.create({
             data: {
                 lobbyId: lobby.id,
-                name: 'Spike Force',
-                captainName: 'Jackie',
+                name: 'Concord Queen',
+                captainName: 'Serena',
             },
         });
 
@@ -285,7 +285,7 @@ describe('PATCH /lobbies/:lobbyId/teams/:teamId (Update Team)', () => {
 
         const saved = await prisma.team.findUnique({ where: { id: team.id } });
         expect(saved?.captainName).toBeNull();
-        expect(saved?.name).toBe('Spike Force');
+        expect(saved?.name).toBe('Concord Queen');
     });
 
     it('Sad Path: empty body -> 400, team unchanged', async () => {
