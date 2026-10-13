@@ -40,20 +40,36 @@ model Lobby {
   startTime     DateTime
   format        LobbyFormat   @default(PICKUP)
   organizer     User          @relation("OrganizedLobbies", fields: [organizerId], references: [id])
-  players       LobbyPlayer[]
+  pools         Pool[]
   teams         Team[]
+  players       LobbyPlayer[]
   rosterEntries RosterEntry[]
+}
+
+model Pool {
+  id          String      @id @default(uuid())
+  lobbyId     String
+  name        String
+  teams        Team[]
+  lobby       Lobby       @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+
+  @@unique([lobbyId, name])
 }
 
 model Team {
   id            String        @id @default(uuid())
   lobbyId       String
   name          String
+  poolId        String?
+  seed          Int?
   lobby         Lobby         @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  pool          Pool?          @relation(fields: [poolId], references: [id], onDelete: SetNull)
   rosterEntries RosterEntry[]
   captainName   String?
 
   @@unique([lobbyId, name])
+  @@unique([lobbyId, seed])
+  @@index([poolId])
 }
 
 model RosterEntry {
