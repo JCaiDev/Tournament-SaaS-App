@@ -52,6 +52,15 @@ export const teamParamSchema = z.object({
     teamId: teamIdSchema,
 });
 
+export const setSeedsSchema = z.object({
+    teamIds: z
+        .array(teamIdSchema)
+        .refine((ids) => new Set(ids).size === ids.length, {
+            message: 'Each team can only appear once',
+        }),
+});
+
 export type AddTeamInput = z.infer<typeof addTeamSchema>;
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
 export type TeamParamInput = z.infer<typeof teamParamSchema>;
+export type SetSeedsInput = z.infer<typeof setSeedsSchema>;
