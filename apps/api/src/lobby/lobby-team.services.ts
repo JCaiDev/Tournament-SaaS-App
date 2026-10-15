@@ -121,4 +121,8 @@ export const setSeedsService = async (
             }),
         ),
     ]);
+    return prisma.team.findMany({
+        where: { lobbyId },
+        orderBy: [{ seed: 'asc' }, { name: 'asc' }],
+    });
 };
