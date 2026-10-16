@@ -104,7 +104,7 @@ export const setSeeds = async (
             req.user,
             seedData,
         );
-        return res.status(201).json({ message: 'Seeds updated', teams });
+        return res.status(200).json({ message: 'Seeds updated', teams });
     } catch (error) {
         next(error);
     }
