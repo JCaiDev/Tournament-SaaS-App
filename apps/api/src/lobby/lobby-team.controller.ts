@@ -4,6 +4,7 @@ import {
     AddTeamInput,
     UpdateTeamInput,
     TeamParamInput,
+    SetSeedsInput,
 } from './lobby-team.schemas';
 import * as TeamServices from './lobby-team.services';
 import { LobbyIdParamInput } from './lobby.schemas';
@@ -82,6 +83,28 @@ export const deleteTeam = async (
         const { lobbyId, teamId } = req.validatedParams as TeamParamInput;
         await TeamServices.deleteTeamService(lobbyId, req.user, teamId);
         return res.status(204).send();
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const setSeeds = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        if (!req.user)
+            return next(new AppError('Authentication required', 401));
+
+        const { lobbyId } = req.validatedParams as LobbyIdParamInput;
+        const seedData = req.validatedBody as SetSeedsInput;
+        const teams = await TeamServices.setSeedsService(
+            lobbyId,
+            req.user,
+            seedData,
+        );
+        return res.status(201).json({ message: 'Seeds updated', teams });
     } catch (error) {
         next(error);
     }
