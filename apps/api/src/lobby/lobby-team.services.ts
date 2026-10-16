@@ -1,4 +1,8 @@
-import { AddTeamInput, UpdateTeamInput } from './lobby-team.schemas';
+import {
+    AddTeamInput,
+    SetSeedsInput,
+    UpdateTeamInput,
+} from './lobby-team.schemas';
 import { AuthUser } from '../types/auth';
 import { assertLobbyManager } from './lobby-access';
 import { prisma } from '../prisma';
@@ -89,4 +93,36 @@ export const deleteTeamService = async (
         }
         throw error;
     }
+};
+
+export const setSeedsService = async (
+    lobbyId: string,
+    actor: AuthUser,
+    teamInput: SetSeedsInput,
+) => {
+    const lobby = await assertLobbyManager(lobbyId, actor);
+    if (lobby.format !== LobbyFormat.TOURNAMENT)
+        throw new AppError('Seeding only available for tournaments', 409);
+    const teamCount = await prisma.team.count({
+        where: { lobbyId, id: { in: teamInput.teamIds } },
+    });
+    if (teamCount !== teamInput.teamIds.length) {
+        throw new AppError('Team not found', 404);
+    }
+    await prisma.$transaction([
+        prisma.team.updateMany({
+            where: { lobbyId },
+            data: { seed: null },
+        }),
+        ...teamInput.teamIds.map((teamId, index) =>
+            prisma.team.update({
+                where: { id: teamId, lobbyId },
+                data: { seed: index + 1 },
+            }),
+        ),
+    ]);
+    return prisma.team.findMany({
+        where: { lobbyId },
+        orderBy: [{ seed: 'asc' }, { name: 'asc' }],
+    });
 };

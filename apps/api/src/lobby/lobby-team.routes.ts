@@ -8,6 +8,7 @@ import { validateBody, validateParams } from '../middleware/validate';
 import { lobbyIdParamSchema } from './lobby.schemas';
 import {
     addTeamSchema,
+    setSeedsSchema,
     teamParamSchema,
     updateTeamSchema,
 } from './lobby-team.schemas';
@@ -46,6 +47,15 @@ router.delete(
     requireRole(...ORGANIZER_ROLES),
     validateParams(teamParamSchema),
     TeamController.deleteTeam,
+);
+
+router.put(
+    '/:lobbyId/teams/seeds',
+    requireAuth,
+    requireRole(...ORGANIZER_ROLES),
+    validateParams(lobbyIdParamSchema),
+    validateBody(setSeedsSchema),
+    TeamController.setSeeds,
 );
 
 export default router;
