@@ -1,5 +1,6 @@
 import {
     AddTeamInput,
+    SetPoolsInput,
     SetSeedsInput,
     UpdateTeamInput,
 } from './lobby-team.schemas';
@@ -124,5 +125,43 @@ export const setSeedsService = async (
     return prisma.team.findMany({
         where: { lobbyId },
         orderBy: [{ seed: 'asc' }, { name: 'asc' }],
+    });
+};
+
+export const setPoolsService = async (
+    lobbyId: string,
+    actor: AuthUser,
+    poolsInput: SetPoolsInput,
+) => {
+    const lobby = await assertLobbyManager(lobbyId, actor);
+    if (lobby.format !== LobbyFormat.TOURNAMENT)
+        throw new AppError('Pools are only available for tournaments', 409);
+
+    const teamIds = poolsInput.pools.flatMap((pool) => pool.teamIds);
+    const teamCount = await prisma.team.count({
+        where: { lobbyId, id: { in: teamIds } },
+    });
+    if (teamCount !== teamIds.length) throw new AppError('Team not found', 404);
+
+    await prisma.$transaction([
+        prisma.pool.deleteMany({
+            where: { lobbyId },
+        }),
+        ...poolsInput.pools.map((pool) =>
+            prisma.pool.create({
+                data: {
+                    name: pool.name,
+                    lobbyId,
+                    teams: {
+                        connect: pool.teamIds.map((teamId) => ({ id: teamId })),
+                    },
+                },
+            }),
+        ),
+    ]);
+    return prisma.pool.findMany({
+        where: { lobbyId },
+        include: { teams: true },
+        orderBy: { name: 'asc' },
     });
 };

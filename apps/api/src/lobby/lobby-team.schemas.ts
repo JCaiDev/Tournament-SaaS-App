@@ -60,7 +60,32 @@ export const setSeedsSchema = z.object({
         }),
 });
 
+export const poolSchema = z.object({
+    name: z.string().trim().min(1).max(25),
+    teamIds: z.array(teamIdSchema),
+});
+
+export const setPoolsSchema = z.object({
+    pools: z
+        .array(poolSchema)
+        .refine(
+            (pools) => {
+                const names = pools.map((pool) => pool.name);
+                return new Set(names).size === names.length;
+            },
+            { message: 'Pool names must be unique' },
+        )
+        .refine(
+            (pools) => {
+                const teamIds = pools.flatMap((pool) => pool.teamIds);
+                return new Set(teamIds).size === teamIds.length;
+            },
+            { message: 'Team can only be in one pool' },
+        ),
+});
+
 export type AddTeamInput = z.infer<typeof addTeamSchema>;
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
 export type TeamParamInput = z.infer<typeof teamParamSchema>;
 export type SetSeedsInput = z.infer<typeof setSeedsSchema>;
+export type SetPoolsInput = z.infer<typeof setPoolsSchema>;
