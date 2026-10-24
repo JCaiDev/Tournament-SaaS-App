@@ -131,18 +131,15 @@ export const setSeedsService = async (
 export const setPoolsService = async (
     lobbyId: string,
     actor: AuthUser,
-    poolInput: SetPoolsInput,
+    poolsInput: SetPoolsInput,
 ) => {
     const lobby = await assertLobbyManager(lobbyId, actor);
     if (lobby.format !== LobbyFormat.TOURNAMENT)
         throw new AppError('Pools are only available for tournaments', 409);
-    const teamIds = poolInput.pools.flatMap((pool) => pool.teamIds);
 
+    const teamIds = poolsInput.pools.flatMap((pool) => pool.teamIds);
     const teamCount = await prisma.team.count({
-        where: {
-            lobbyId,
-            id: { in: teamIds },
-        },
+        where: { lobbyId, id: { in: teamIds } },
     });
     if (teamCount !== teamIds.length) throw new AppError('Team not found', 404);
 
@@ -150,7 +147,7 @@ export const setPoolsService = async (
         prisma.pool.deleteMany({
             where: { lobbyId },
         }),
-        ...poolInput.pools.map((pool) =>
+        ...poolsInput.pools.map((pool) =>
             prisma.pool.create({
                 data: {
                     name: pool.name,
