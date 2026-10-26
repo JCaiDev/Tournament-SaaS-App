@@ -132,3 +132,21 @@ export const setPools = async (
         next(error);
     }
 };
+
+export const listPools = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        if (!req.user)
+            return next(new AppError('Authentication required', 401));
+        const { lobbyId } = req.validatedParams as LobbyIdParamInput;
+
+        const pools = await TeamServices.listPoolsService(lobbyId, req.user);
+
+        return res.status(200).json({ message: 'List of pools', pools });
+    } catch (error) {
+        next(error);
+    }
+};

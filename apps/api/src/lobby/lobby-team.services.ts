@@ -165,3 +165,15 @@ export const setPoolsService = async (
         orderBy: { name: 'asc' },
     });
 };
+
+export const listPoolsService = async (lobbyId: string, actor: AuthUser) => {
+    const lobby = await assertLobbyManager(lobbyId, actor);
+    if (lobby.format !== LobbyFormat.TOURNAMENT)
+        throw new AppError('Pools are only available for tournaments', 409);
+
+    return await prisma.pool.findMany({
+        where: { lobbyId },
+        include: { teams: true },
+        orderBy: { name: 'asc' },
+    });
+};
