@@ -173,4 +173,68 @@ describe('PATCH /lobbies/:id (Update Lobby)', () => {
         });
         expect(saved?.format).toBe(LobbyFormat.TOURNAMENT);
     });
+
+    // ---------- START / END TIME RULES ----------
+
+    // Regression: the end/start check used to exist only on create. With a
+    // PATCH, the new endTime has to be compared with the SAVED startTime.
+    it('Sad Path: only endTime sent, before the saved startTime -> 400, nothing saved', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
+        const beforeStart = new Date(lobby.startTime.getTime() - 60 * 60 * 1000);
+
+        // ACT
+        const res = await request(app)
+            .patch(`/lobbies/${lobby.id}`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({ endTime: beforeStart });
+
+        // ASSERT
+        expect(res.status).toBe(400);
+        expect(res.body.error.message).toBe('End time must be after start time');
+        const saved = await prisma.lobby.findUnique({ where: { id: lobby.id } });
+        expect(saved?.endTime).toEqual(lobby.endTime);
+    });
+
+    // The edit page always sends both times. A lobby that has already started
+    // (e.g. a tournament in progress) must still be editable.
+    it('Happy Path: lobby already started, startTime resent unchanged -> 200', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id, {
+            startTime: new Date(Date.now() - 60 * 60 * 1000), // -1h
+            endTime: new Date(Date.now() + 5 * 60 * 60 * 1000), // +5h
+        });
+
+        // ACT
+        const res = await request(app)
+            .patch(`/lobbies/${lobby.id}`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({
+                startTime: lobby.startTime,
+                endTime: lobby.endTime,
+                location: 'Court 2 Gym',
+            });
+
+        // ASSERT
+        expect(res.status).toBe(200);
+        expect(res.body.lobby.location).toBe('Court 2 Gym');
+    });
+
+    it('Sad Path: startTime changed to the past -> 400', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id);
+
+        // ACT
+        const res = await request(app)
+            .patch(`/lobbies/${lobby.id}`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+            .send({ startTime: new Date(Date.now() - 60 * 60 * 1000) });
+
+        // ASSERT
+        expect(res.status).toBe(400);
+        expect(res.body.error.message).toBe('Start time cannot be in the past');
+    });
 });

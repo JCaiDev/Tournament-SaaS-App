@@ -24,6 +24,8 @@ export const createLobbySchema = lobbyBaseSchema
         path: ['startTime'],
     });
 
+// No time refines here: a PATCH may send only one of the two times, so the
+// start/end rules need the saved values and live in updateLobbyService.
 export const updateLobbySchema = lobbyBaseSchema.partial();
 
 export type CreateLobbyInput = z.infer<typeof createLobbySchema>;
