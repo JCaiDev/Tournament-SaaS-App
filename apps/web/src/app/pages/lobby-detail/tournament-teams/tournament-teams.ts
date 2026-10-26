@@ -13,6 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TeamService } from '../../../services/team.service';
 import { Team, UpdateTeamRequest } from '../../../models/team';
+import { TournamentPools } from '../tournament-pools/tournament-pools';
 
 // Same limits as the API's addTeamSchema / updateTeamSchema.
 const NAME_MAX = 25;
@@ -21,7 +22,7 @@ const NAME_MAX = 25;
 // change goes to the API, so teams survive a refresh.
 @Component({
   selector: 'app-tournament-teams',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TournamentPools],
   templateUrl: './tournament-teams.html',
   styleUrl: './tournament-teams.css',
 })

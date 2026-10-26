@@ -1,0 +1,133 @@
+<section class="pools">
+  <h3 class="pools-title">
+    Seeds &amp; pools
+    <span class="draft-badge">Draft · only you can see this</span>
+  </h3>
+
+  @if (loading()) {
+    <p class="muted">Loading pools…</p>
+  } @else if (loadError()) {
+    <p class="error">{{ loadError() }}</p>
+  } @else {
+    <!-- Step 1: seeds -->
+    <div class="step">
+      <div class="step-head">
+        <h4>1. Seeds</h4>
+        <ng-container *ngTemplateOutlet="status; context: { $implicit: seedSaver }" />
+      </div>
+      <p class="hint">Rank the strongest teams. Unseeded teams are placed in random order.</p>
+
+      @if (seededTeams().length > 0) {
+        <ol class="seed-list">
+          @for (team of seededTeams(); track team.id; let i = $index, first = $first, last = $last) {
+            <li class="seed-row">
+              <span class="seed-badge">{{ i + 1 }}</span>
+              <span class="seed-name" [title]="team.name">{{ team.name }}</span>
+              <span class="seed-actions">
+                <button type="button" class="icon-btn" (click)="moveSeed(i, -1)" [disabled]="first"
+                  [attr.aria-label]="'Move ' + team.name + ' up'">↑</button>
+                <button type="button" class="icon-btn" (click)="moveSeed(i, 1)" [disabled]="last"
+                  [attr.aria-label]="'Move ' + team.name + ' down'">↓</button>
+                <button type="button" class="icon-btn icon-btn-danger" (click)="removeSeed(team.id)"
+                  [attr.aria-label]="'Unseed ' + team.name">✕</button>
+              </span>
+            </li>
+          }
+        </ol>
+      }
+
+      @if (unseededTeams().length > 0) {
+        <div class="chip-row">
+          <span class="chip-label">Unseeded</span>
+          @for (team of unseededTeams(); track team.id) {
+            <button type="button" class="chip" (click)="addSeed(team.id)"
+              [attr.aria-label]="'Seed ' + team.name">+ {{ team.name }}</button>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Step 2: pools -->
+    <div class="step">
+      <div class="step-head">
+        <h4>2. Pools</h4>
+        <ng-container *ngTemplateOutlet="status; context: { $implicit: poolSaver }" />
+      </div>
+
+      <div class="generate-row">
+        <label class="count-field">
+          <span>Pools</span>
+          <input type="number" min="1" [max]="teams().length" [value]="poolCount()" (change)="setPoolCount($event)" />
+        </label>
+        <button type="button" class="btn btn-primary" (click)="generate()">Generate</button>
+        @if (layout().length > 0) {
+          <button type="button" class="text-btn" (click)="addPool()">+ Add pool</button>
+          <button type="button" class="text-btn text-btn-danger" (click)="clearPools()">Clear pools</button>
+        }
+      </div>
+      <p class="hint">Generate snakes the seeds across the pools (1 and the last seed share a pool). Then move teams by hand; every change saves itself.</p>
+
+      @if (layout().length > 0) {
+        <div class="pool-grid">
+          @for (pool of poolViews(); track pool.name; let pi = $index) {
+            <div class="pool-card">
+              <div class="pool-head">
+                <span class="pool-name">{{ pool.name }}</span>
+                <span class="pool-count">{{ pool.teams.length }}</span>
+                <button type="button" class="text-btn text-btn-danger pool-remove" (click)="removePool(pi)"
+                  [attr.aria-label]="'Remove ' + pool.name">Remove</button>
+              </div>
+              <ul class="pool-teams">
+                @for (team of pool.teams; track team.id) {
+                  <ng-container *ngTemplateOutlet="teamRow; context: { $implicit: team, at: pi }" />
+                } @empty {
+                  <li class="muted pool-empty">No teams</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <div class="pool-card pool-unassigned">
+            <div class="pool-head">
+              <span class="pool-name">Unassigned</span>
+              <span class="pool-count">{{ unassignedTeams().length }}</span>
+            </div>
+            <ul class="pool-teams">
+              @for (team of unassignedTeams(); track team.id) {
+                <ng-container *ngTemplateOutlet="teamRow; context: { $implicit: team, at: UNASSIGNED }" />
+              } @empty {
+                <li class="muted pool-empty">Every team is in a pool</li>
+              }
+            </ul>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<ng-template #teamRow let-team let-at="at">
+  <li class="pool-team">
+    <span class="pool-team-name" [title]="team.name">{{ team.name }}</span>
+    @if (seedOf().get(team.id); as seed) {
+      <span class="seed-tag">#{{ seed }}</span>
+    }
+    <select class="move-select" (change)="onMove(team.id, $event)" [attr.aria-label]="'Move ' + team.name + ' to'">
+      @for (pool of poolViews(); track pool.name; let pi = $index) {
+        <option [value]="pi" [selected]="pi === at">{{ pool.name }}</option>
+      }
+      <option [value]="UNASSIGNED" [selected]="at === UNASSIGNED">Unassigned</option>
+    </select>
+  </li>
+</ng-template>
+
+<ng-template #status let-saver>
+  @if (saveMessage(saver); as message) {
+    <span class="save-status" [class.save-error]="saver.status() === 'error'" role="status">
+      {{ message }}
+      @if (saver.status() === 'error') {
+        <button type="button" class="text-btn" (click)="saver.flush()">Retry</button>
+      }
+    </span>
+  }
+</ng-template>
