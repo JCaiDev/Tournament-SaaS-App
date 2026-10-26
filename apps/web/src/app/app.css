@@ -124,6 +124,38 @@ main {
   white-space: nowrap;
 }
 
+/* Phones: brand on the first row, nav on a second full-width row, shorter
+   labels and no name next to the avatar, so nothing is wider than the screen.
+   Not sticky here: two rows would cover too much of a small screen. */
+@media (max-width: 640px) {
+  .site-header {
+    position: static;
+  }
+  .header-inner {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: var(--space-sm);
+    padding-top: var(--space-sm);
+    padding-bottom: var(--space-sm);
+  }
+  .site-nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+  .nav-link,
+  .nav-btn {
+    white-space: nowrap;
+  }
+  .nav-btn {
+    padding: 0.4rem 0.75rem;
+  }
+  .nav-long,
+  .nav-name {
+    display: none;
+  }
+}
+
 .site-footer {
   background: var(--color-foreground);
   color: #b9c6d3;

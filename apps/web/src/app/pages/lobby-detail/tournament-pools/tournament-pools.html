@@ -37,12 +37,34 @@
       }
 
       @if (unseededTeams().length > 0) {
-        <div class="chip-row">
-          <span class="chip-label">Unseeded</span>
-          @for (team of unseededTeams(); track team.id) {
-            <button type="button" class="chip" (click)="addSeed(team.id)"
-              [attr.aria-label]="'Seed ' + team.name">+ {{ team.name }}</button>
-          }
+        <div class="unseeded">
+          <div class="unseeded-head">
+            <span class="unseeded-label">Unseeded <span class="unseeded-count">{{ unseededTeams().length }}</span></span>
+            @if (unseededTeams().length > searchFrom) {
+              <input
+                type="search"
+                class="unseeded-search"
+                placeholder="Find a team"
+                aria-label="Find an unseeded team"
+                [value]="unseededFilter()"
+                (input)="onFilter($event)"
+              />
+            }
+          </div>
+          <!-- A–Z down each column, like a phone book. -->
+          <ul class="unseeded-list">
+            @for (team of filteredUnseeded(); track team.id) {
+              <li>
+                <button type="button" class="unseeded-row" (click)="addSeed(team.id)"
+                  [attr.aria-label]="'Seed ' + team.name">
+                  <span class="unseeded-name" [title]="team.name">{{ team.name }}</span>
+                  <span class="unseeded-add" aria-hidden="true">+ Seed</span>
+                </button>
+              </li>
+            } @empty {
+              <li class="muted unseeded-empty">No team matches “{{ unseededFilter() }}”.</li>
+            }
+          </ul>
         </div>
       }
     </div>
