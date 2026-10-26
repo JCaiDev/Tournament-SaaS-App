@@ -57,12 +57,30 @@ export const updateLobbyService = async (
         select: {
             id: true,
             organizerId: true,
+            startTime: true,
+            endTime: true,
         },
     });
 
     if (!lobby) throw new AppError('Lobby not found', 404);
     if (lobby.organizerId !== userId && role !== Role.ADMIN)
         throw new AppError('Access Denied', 403);
+
+    // Compare the times the lobby will have after the update: new value if
+    // sent, saved value if not.
+    const startTime = data.startTime ?? lobby.startTime;
+    const endTime = data.endTime ?? lobby.endTime;
+    if (endTime <= startTime)
+        throw new AppError('End time must be after start time', 400);
+
+    // Only a changed start time must be in the future, so an organizer can
+    // still edit a lobby that has already started.
+    const startChanged =
+        data.startTime !== undefined &&
+        data.startTime.getTime() !== lobby.startTime.getTime();
+    if (startChanged && startTime <= new Date())
+        throw new AppError('Start time cannot be in the past', 400);
+
     return prisma.lobby.update({
         where: { id },
         data,
