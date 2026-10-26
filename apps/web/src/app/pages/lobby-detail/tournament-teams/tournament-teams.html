@@ -111,3 +111,8 @@
     }
   }
 </section>
+
+<!-- Pools are a private draft, so only the organizer gets this section. -->
+@if (canManage() && !loading() && !loadError() && teams().length > 0) {
+  <app-tournament-pools [lobbyId]="lobbyId()" [teams]="teams()" />
+}

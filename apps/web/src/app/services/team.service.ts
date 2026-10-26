@@ -4,6 +4,10 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   AddTeamRequest,
+  Pool,
+  PoolListResponse,
+  SetPoolsRequest,
+  SetSeedsRequest,
   Team,
   TeamListResponse,
   TeamResponse,
@@ -42,5 +46,26 @@ export class TeamService {
   /** DELETE /lobbies/:lobbyId/teams/:teamId — 204; its roster entries become free agents. */
   deleteTeam(lobbyId: string, teamId: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${lobbyId}/teams/${teamId}`);
+  }
+
+  /** PUT /lobbies/:lobbyId/teams/seeds — full replace; 404 if an id isn't in this lobby. */
+  setSeeds(lobbyId: string, data: SetSeedsRequest): Observable<void> {
+    return this.http
+      .put<unknown>(`${this.baseUrl}/${lobbyId}/teams/seeds`, data)
+      .pipe(map(() => undefined));
+  }
+
+  /** GET /lobbies/:lobbyId/pools — organizer/admin only while pools are a draft. */
+  listPools(lobbyId: string): Observable<Pool[]> {
+    return this.http
+      .get<PoolListResponse>(`${this.baseUrl}/${lobbyId}/pools`)
+      .pipe(map((res) => res.pools));
+  }
+
+  /** PUT /lobbies/:lobbyId/pools — full replace; 404 if a team id isn't in this lobby. */
+  setPools(lobbyId: string, data: SetPoolsRequest): Observable<void> {
+    return this.http
+      .put<unknown>(`${this.baseUrl}/${lobbyId}/pools`, data)
+      .pipe(map(() => undefined));
   }
 }
