@@ -68,4 +68,12 @@ router.put(
     TeamController.setPools,
 );
 
+router.get(
+    '/:lobbyId/pools',
+    requireAuth,
+    requireRole(...ORGANIZER_ROLES),
+    validateParams(lobbyIdParamSchema),
+    TeamController.listPools,
+);
+
 export default router;
