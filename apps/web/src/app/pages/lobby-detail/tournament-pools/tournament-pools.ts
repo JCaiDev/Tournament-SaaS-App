@@ -57,15 +57,23 @@ export class TournamentPools implements OnInit, OnDestroy {
     const seeded = new Set(this.seedOrder());
     return sortByName(this.teams().filter((t) => !seeded.has(t.id)));
   });
+  // Search box over the unseeded list; only shown once the list gets long.
+  readonly searchFrom = 8;
+  readonly unseededFilter = signal('');
+  readonly filteredUnseeded = computed(() => {
+    const query = this.unseededFilter().trim().toLowerCase();
+    const teams = this.unseededTeams();
+    return query ? teams.filter((t) => t.name.toLowerCase().includes(query)) : teams;
+  });
   // Seed number by team id, for the "#1" tags on pool cards.
   readonly seedOf = computed(() => new Map(this.seededTeams().map((t, i) => [t.id, i + 1])));
 
   readonly poolViews = computed<PoolView[]>(() =>
-    this.layout().map((p) => ({ name: p.name, teams: sortByName(this.toTeams(p.teamIds)) })),
+    this.layout().map((p) => ({ name: p.name, teams: this.seedsFirst(this.toTeams(p.teamIds)) })),
   );
   readonly unassignedTeams = computed(() => {
     const pooled = new Set(this.layout().flatMap((p) => p.teamIds));
-    return sortByName(this.teams().filter((t) => !pooled.has(t.id)));
+    return this.seedsFirst(this.teams().filter((t) => !pooled.has(t.id)));
   });
 
   readonly UNASSIGNED = UNASSIGNED;
@@ -110,6 +118,10 @@ export class TournamentPools implements OnInit, OnDestroy {
   addSeed(teamId: string): void {
     this.seedOrder.update((ids) => [...this.liveIds(ids), teamId]);
     this.seedSaver.schedule();
+  }
+
+  onFilter(event: Event): void {
+    this.unseededFilter.set((event.target as HTMLInputElement).value);
   }
 
   removeSeed(teamId: string): void {
@@ -189,6 +201,17 @@ export class TournamentPools implements OnInit, OnDestroy {
       default:
         return '';
     }
+  }
+
+  // Seeded teams first (#1, #2, …), then unseeded teams A–Z. Uses the seed
+  // order on screen, so reordering seeds re-sorts the pool cards right away.
+  private seedsFirst(teams: Team[]): Team[] {
+    const seedOf = this.seedOf();
+    return [...teams].sort((a, b) => {
+      const sa = seedOf.get(a.id) ?? Infinity;
+      const sb = seedOf.get(b.id) ?? Infinity;
+      return sa !== sb ? sa - sb : a.name.localeCompare(b.name);
+    });
   }
 
   private liveIds(ids: string[]): string[] {

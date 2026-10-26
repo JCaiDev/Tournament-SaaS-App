@@ -142,14 +142,24 @@
   color: var(--color-destructive);
 }
 
-.chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-xs) var(--space-sm);
+.unseeded {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md) var(--space-md);
 }
 
-.chip-label {
+.unseeded-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.unseeded-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -157,20 +167,83 @@
   font-weight: 700;
 }
 
-.chip {
-  border: 1px dashed var(--color-border);
+.unseeded-count {
+  color: var(--color-on-secondary);
+  background: var(--color-secondary);
   border-radius: 999px;
+  padding: 0 0.45rem;
+  letter-spacing: 0;
+}
+
+.unseeded-search {
+  flex: 1 1 160px;
+  max-width: 260px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.9rem;
   background: var(--color-surface);
   color: var(--color-foreground);
+}
+
+.unseeded-search:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* CSS columns fill top to bottom, then the next column, so A–Z reads down
+   like a phone book. One column on phones, more as the screen widens. */
+.unseeded-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 13rem;
+  column-gap: var(--space-md);
+}
+
+.unseeded-list li {
+  break-inside: avoid;
+}
+
+.unseeded-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-foreground);
   font: inherit;
-  font-size: 0.85rem;
-  padding: 0.3rem 0.75rem;
+  text-align: left;
+  padding: 0.45rem 0.25rem;
   cursor: pointer;
 }
 
-.chip:hover {
-  border-color: var(--color-primary);
+.unseeded-row:hover,
+.unseeded-row:focus-visible {
+  background: var(--color-background);
+}
+
+.unseeded-name {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unseeded-add {
+  flex: none;
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--color-primary);
+}
+
+.unseeded-empty {
+  font-size: 0.85rem;
+  padding: 0.45rem 0.25rem;
 }
 
 /* ---- Pools ---- */
