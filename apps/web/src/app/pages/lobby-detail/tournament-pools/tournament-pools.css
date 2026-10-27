@@ -343,6 +343,63 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.25rem;
+}
+
+/* Tablet and up only (see canDrag in the component). */
+.pool-team-draggable {
+  cursor: grab;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.pool-team-draggable:hover {
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.pool-unassigned .pool-team {
+  background: var(--color-background);
+}
+
+.drag-grip {
+  flex: none;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+/* ---- Drag and drop (classes added by @angular/cdk while dragging) ---- */
+
+/* The copy that follows the pointer (CDK moves it to <body>). */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border: 1px solid var(--color-primary);
+  box-shadow: var(--shadow-lg);
+  cursor: grabbing;
+}
+
+/* The gap left behind / shown where the team would land. */
+.cdk-drag-placeholder {
+  opacity: 0.35;
+}
+
+/* While a drag is in progress, every card that can take the team. */
+.pool-card.cdk-drop-list-receiving {
+  border-color: var(--color-primary);
+}
+
+/* The card the pointer is over right now. */
+.pool-card.cdk-drop-list-dragging {
+  border-color: var(--color-primary);
+  border-style: solid;
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* The row slides into place instead of jumping when it's dropped. */
+.cdk-drag-animating {
+  transition: transform 200ms ease;
 }
 
 .pool-team-name {

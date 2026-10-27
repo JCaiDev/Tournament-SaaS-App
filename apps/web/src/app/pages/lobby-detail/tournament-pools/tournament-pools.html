@@ -87,61 +87,73 @@
           <button type="button" class="text-btn text-btn-danger" (click)="clearPools()">Clear pools</button>
         }
       </div>
-      <p class="hint">Generate snakes the seeds across the pools (1 and the last seed share a pool). Then move teams by hand; every change saves itself.</p>
+      <p class="hint">
+        Generate snakes the seeds across the pools (1 and the last seed share a pool). Then
+        {{ !canDrag() ? 'use each team’s menu to move it' : showMenu() ? 'drag teams between pools or use each team’s menu' : 'drag teams between pools' }}. Every change saves itself.
+      </p>
 
       @if (layout().length > 0) {
-        <div class="pool-grid">
-          @for (pool of poolViews(); track pool.name; let pi = $index) {
-            <div class="pool-card">
+        <!-- cdkDropListGroup: every card below can accept a team dragged from any other. -->
+        <div class="pool-grid" cdkDropListGroup>
+          @for (column of columns(); track column.key) {
+            <!-- Each card is a drop zone; its data is where a dropped team goes. -->
+            <div
+              class="pool-card"
+              [class.pool-unassigned]="column.key === UNASSIGNED"
+              cdkDropList
+              [cdkDropListData]="column.key"
+              [cdkDropListDisabled]="!canDrag()"
+              cdkDropListSortingDisabled
+              (cdkDropListDropped)="onDrop($event)"
+            >
               <div class="pool-head">
-                <span class="pool-name">{{ pool.name }}</span>
-                <span class="pool-count">{{ pool.teams.length }}</span>
-                <button type="button" class="text-btn text-btn-danger pool-remove" (click)="removePool(pi)"
-                  [attr.aria-label]="'Remove ' + pool.name">Remove</button>
+                <span class="pool-name">{{ column.name }}</span>
+                <span class="pool-count">{{ column.teams.length }}</span>
+                @if (column.key !== UNASSIGNED) {
+                  <button type="button" class="text-btn text-btn-danger pool-remove" (click)="removePool(column.key)"
+                    [attr.aria-label]="'Remove ' + column.name">Remove</button>
+                }
               </div>
               <ul class="pool-teams">
-                @for (team of pool.teams; track team.id) {
-                  <ng-container *ngTemplateOutlet="teamRow; context: { $implicit: team, at: pi }" />
+                @for (team of column.teams; track team.id) {
+                  <!-- cdkDrag: this row can be picked up; its data is the team id. -->
+                  <li
+                    class="pool-team"
+                    [class.pool-team-draggable]="canDrag()"
+                    cdkDrag
+                    [cdkDragData]="team.id"
+                    [cdkDragDisabled]="!canDrag()"
+                    [cdkDragStartDelay]="dragDelay"
+                  >
+                    @if (canDrag()) {
+                      <span class="drag-grip" aria-hidden="true">⠿</span>
+                    }
+                    <span class="pool-team-name" [title]="team.name">{{ team.name }}</span>
+                    @if (seedOf().get(team.id); as seed) {
+                      <span class="seed-tag">#{{ seed }}</span>
+                    }
+                    @if (showMenu()) {
+                      <select class="move-select" (change)="onMove(team.id, $event)" [attr.aria-label]="'Move ' + team.name + ' to'">
+                        @for (pool of poolViews(); track pool.name; let pi = $index) {
+                          <option [value]="pi" [selected]="pi === column.key">{{ pool.name }}</option>
+                        }
+                        <option [value]="UNASSIGNED" [selected]="column.key === UNASSIGNED">Unassigned</option>
+                      </select>
+                    }
+                  </li>
                 } @empty {
-                  <li class="muted pool-empty">No teams</li>
+                  <li class="muted pool-empty">
+                    {{ column.key === UNASSIGNED ? 'Every team is in a pool' : 'Drop teams here' }}
+                  </li>
                 }
               </ul>
             </div>
           }
-
-          <div class="pool-card pool-unassigned">
-            <div class="pool-head">
-              <span class="pool-name">Unassigned</span>
-              <span class="pool-count">{{ unassignedTeams().length }}</span>
-            </div>
-            <ul class="pool-teams">
-              @for (team of unassignedTeams(); track team.id) {
-                <ng-container *ngTemplateOutlet="teamRow; context: { $implicit: team, at: UNASSIGNED }" />
-              } @empty {
-                <li class="muted pool-empty">Every team is in a pool</li>
-              }
-            </ul>
-          </div>
         </div>
       }
     </div>
   }
 </section>
-
-<ng-template #teamRow let-team let-at="at">
-  <li class="pool-team">
-    <span class="pool-team-name" [title]="team.name">{{ team.name }}</span>
-    @if (seedOf().get(team.id); as seed) {
-      <span class="seed-tag">#{{ seed }}</span>
-    }
-    <select class="move-select" (change)="onMove(team.id, $event)" [attr.aria-label]="'Move ' + team.name + ' to'">
-      @for (pool of poolViews(); track pool.name; let pi = $index) {
-        <option [value]="pi" [selected]="pi === at">{{ pool.name }}</option>
-      }
-      <option [value]="UNASSIGNED" [selected]="at === UNASSIGNED">Unassigned</option>
-    </select>
-  </li>
-</ng-template>
 
 <ng-template #status let-saver>
   @if (saveMessage(saver); as message) {
