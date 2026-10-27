@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
-import { LobbyDetail } from './pages/lobby-detail/lobby-detail';
 import { Login } from './pages/login/login';
 import { Signup } from './pages/signup/signup';
 import { Profile } from './pages/profile/profile';
@@ -14,7 +13,13 @@ export const routes: Routes = [
   { path: 'lobbies/new', component: NewLobby, title: 'Organize · Volleyball', canActivate: [authGuard] },
   { path: 'lobbies/new/pickup', component: CreateLobby, title: 'Host a Pickup Game · Volleyball', canActivate: [authGuard], data: { format: 'PICKUP' } },
   { path: 'lobbies/new/tournament', component: CreateLobby, title: 'Organize a Tournament · Volleyball', canActivate: [authGuard], data: { format: 'TOURNAMENT' } },
-  { path: 'lobbies/:id', component: LobbyDetail, title: 'Lobby Details · Volleyball' },
+  // Lazy: the lobby page (and the drag-and-drop library it uses) downloads
+  // only when someone opens a lobby, keeping the first page load small.
+  {
+    path: 'lobbies/:id',
+    loadComponent: () => import('./pages/lobby-detail/lobby-detail').then((m) => m.LobbyDetail),
+    title: 'Lobby Details · Volleyball',
+  },
   { path: 'lobbies/:id/edit', component: EditLobby, title: 'Edit Lobby · Volleyball', canActivate: [authGuard] },
   { path: 'login', component: Login, title: 'Log in · Volleyball' },
   { path: 'signup', component: Signup, title: 'Sign up · Volleyball' },

@@ -1,6 +1,10 @@
 import { Component, OnDestroy, OnInit, computed, inject, input, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NgTemplateOutlet } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { TeamService } from '../../../services/team.service';
 import { PoolLayout, Team } from '../../../models/team';
 import { SerialSaver } from '../../../shared/autosave/serial-saver';
@@ -8,9 +12,20 @@ import { poolName, snakePools } from '../../../shared/pool-generator/snake-pools
 
 const UNASSIGNED = -1;
 
+// Same "tablet and up" breakpoint as the teams cards (tournament-teams.css).
+const TABLET_UP = '(min-width: 641px)';
+// Laptops and desktops.
+const LARGE_UP = '(min-width: 1024px)';
+
 interface PoolView {
   name: string;
   teams: Team[];
+}
+
+// One card on screen: a pool (key = its index in `layout`) or Unassigned
+// (key = UNASSIGNED). The key is also the card's drop-zone data.
+interface Column extends PoolView {
+  key: number;
 }
 
 // Organizer-only draft: rank seeds → Generate pools (snake, in the browser) →
@@ -19,7 +34,7 @@ interface PoolView {
 // tournament goes live (not built yet), so the parent only shows it to managers.
 @Component({
   selector: 'app-tournament-pools',
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, CdkDropListGroup, CdkDropList, CdkDrag],
   templateUrl: './tournament-pools.html',
   styleUrl: './tournament-pools.css',
 })
@@ -75,8 +90,25 @@ export class TournamentPools implements OnInit, OnDestroy {
     const pooled = new Set(this.layout().flatMap((p) => p.teamIds));
     return this.seedsFirst(this.teams().filter((t) => !pooled.has(t.id)));
   });
+  // Every card in display order: the pools, then Unassigned last.
+  readonly columns = computed<Column[]>(() => [
+    ...this.poolViews().map((p, i) => ({ ...p, key: i })),
+    { key: UNASSIGNED, name: 'Unassigned', teams: this.unassignedTeams() },
+  ]);
 
   readonly UNASSIGNED = UNASSIGNED;
+  // How teams move, by screen width:
+  //   phones (≤ 640px)       → "Move to" dropdown only (dragging fights scrolling)
+  //   tablets (641–1023px)   → both: drag, or the dropdown if dragging is fiddly
+  //   large (≥ 1024px)       → drag only
+  // Both update live when the window is resized or a tablet is rotated.
+  private readonly breakpoints = inject(BreakpointObserver);
+  readonly canDrag = this.matches(TABLET_UP);
+  private readonly isLarge = this.matches(LARGE_UP);
+  readonly showMenu = computed(() => !this.isLarge());
+  // Touch tablets: hold 250ms before a drag starts, so a normal swipe still
+  // scrolls the page. Mouse: drag starts right away.
+  readonly dragDelay = { touch: 250, mouse: 0 };
 
   ngOnInit(): void {
     // Seeds come with the team rows the parent already loaded.
@@ -177,9 +209,23 @@ export class TournamentPools implements OnInit, OnDestroy {
     this.poolSaver.schedule();
   }
 
-  // From a team's "Move to" dropdown; UNASSIGNED takes it out of every pool.
+  // From a team's "Move to" dropdown.
   onMove(teamId: string, event: Event): void {
-    const target = Number((event.target as HTMLSelectElement).value);
+    this.moveTeam(teamId, Number((event.target as HTMLSelectElement).value));
+  }
+
+  // A team was dropped on a card. `previousContainer` is the card it came
+  // from, `container` the card it landed on; their data is the column key.
+  // Dropping back on the same card changes nothing: order inside a pool isn't
+  // saved (cards always sort seeds first, then A–Z).
+  onDrop(event: CdkDragDrop<number, number, string>): void {
+    if (event.previousContainer === event.container) return;
+    this.moveTeam(event.item.data, event.container.data);
+  }
+
+  // The one place a team changes pool: take it out of every pool, then add it
+  // to `target` (UNASSIGNED adds it nowhere). Then autosave the whole layout.
+  private moveTeam(teamId: string, target: number): void {
     this.layout.update((pools) =>
       pools.map((p, i) => {
         const teamIds = p.teamIds.filter((id) => id !== teamId);
@@ -211,6 +257,13 @@ export class TournamentPools implements OnInit, OnDestroy {
       const sa = seedOf.get(a.id) ?? Infinity;
       const sb = seedOf.get(b.id) ?? Infinity;
       return sa !== sb ? sa - sb : a.name.localeCompare(b.name);
+    });
+  }
+
+  // A signal that's true while the media query matches.
+  private matches(query: string) {
+    return toSignal(this.breakpoints.observe(query).pipe(map((state) => state.matches)), {
+      initialValue: matchMedia(query).matches,
     });
   }
 
