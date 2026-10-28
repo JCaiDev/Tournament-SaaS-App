@@ -286,10 +286,31 @@
   outline-offset: 1px;
 }
 
+/* Tailwind-style breakpoints. Phone: 1 column. sm (640) and up: 2.
+   lg (1024): 3. xl (1280): 4. The page widens from lg, see .detail-wide in
+   lobby-detail.css. */
 .pool-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--space-md);
+}
+
+@media (min-width: 641px) {
+  .pool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .pool-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .pool-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .pool-card {

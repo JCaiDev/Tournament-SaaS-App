@@ -36,6 +36,15 @@
   --space-2xl: 3rem;
   --space-3xl: 4rem;
 
+  /* Breakpoints (Tailwind scale), mobile-first. CSS can't read var() inside
+     @media, so every stylesheet writes these numbers out; use only these:
+       sm  640px   large phone / small tablet   (max-width: 640px for phone-only rules,
+                                                 min-width: 641px for sm-and-up)
+       md  768px   tablet
+       lg  1024px  laptop
+       xl  1280px  desktop
+       2xl 1536px  big desktop */
+
   /* Radii & shadows */
   --radius-sm: 8px;
   --radius-md: 12px;
