@@ -3,6 +3,14 @@
   max-width: 760px;
 }
 
+/* Laptop+ (lg, 1024px) tournaments: use the full container width so pools fit
+   3–4 per row. Pickup pages stay narrow; there's nothing there that needs the room. */
+@media (min-width: 1024px) {
+  .detail-wide {
+    max-width: 1120px;
+  }
+}
+
 .back-link {
   display: inline-block;
   color: var(--color-primary);

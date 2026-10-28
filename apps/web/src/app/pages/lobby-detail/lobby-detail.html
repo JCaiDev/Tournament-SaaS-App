@@ -1,4 +1,4 @@
-<section class="container detail">
+<section class="container detail" [class.detail-wide]="isTournament()">
   <a routerLink="/" class="back-link">← Back to lobbies</a>
 
   @if (loading()) {
