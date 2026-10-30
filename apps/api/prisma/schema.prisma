@@ -44,32 +44,56 @@ model Lobby {
   teams         Team[]
   players       LobbyPlayer[]
   rosterEntries RosterEntry[]
+  slotMinutes   Int?
+  matches       Match[]
 }
 
 model Pool {
-  id      String @id @default(uuid())
+  id      String  @id @default(uuid())
   lobbyId String
   name    String
   teams   Team[]
-  lobby   Lobby  @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  lobby   Lobby   @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  matches Match[]
 
   @@unique([lobbyId, name])
 }
 
 model Team {
-  id            String        @id @default(uuid())
-  lobbyId       String
-  name          String
-  poolId        String?
-  seed          Int?
-  lobby         Lobby         @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
-  pool          Pool?         @relation(fields: [poolId], references: [id], onDelete: SetNull)
-  rosterEntries RosterEntry[]
-  captainName   String?
+  id             String        @id @default(uuid())
+  lobbyId        String
+  name           String
+  poolId         String?
+  seed           Int?
+  lobby          Lobby         @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  pool           Pool?         @relation(fields: [poolId], references: [id], onDelete: SetNull)
+  rosterEntries  RosterEntry[]
+  captainName    String?
+  matchesAsTeamA Match[]       @relation("MatchTeamA")
+  matchesAsTeamB Match[]       @relation("MatchTeamB")
+  matchesAsRef   Match[]       @relation("MatchRef")
 
   @@unique([lobbyId, name])
   @@unique([lobbyId, seed])
   @@index([poolId])
+}
+
+model Match {
+  id        String   @id @default(uuid())
+  lobbyId   String
+  poolId    String
+  teamAId   String
+  teamBId   String
+  refTeamId String?
+  court     Int
+  startTime DateTime
+  pool      Pool     @relation(fields: [poolId], references: [id])
+  lobby     Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  teamA     Team     @relation("MatchTeamA", fields: [teamAId], references: [id])
+  teamB     Team     @relation("MatchTeamB", fields: [teamBId], references: [id])
+  referee   Team?    @relation("MatchRef", fields: [refTeamId], references: [id], onDelete: Restrict)
+
+  @@index([lobbyId])
 }
 
 model RosterEntry {
