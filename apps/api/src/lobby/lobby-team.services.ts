@@ -144,6 +144,9 @@ export const setPoolsService = async (
     if (teamCount !== teamIds.length) throw new AppError('Team not found', 404);
 
     await prisma.$transaction([
+        prisma.match.deleteMany({
+            where: { lobbyId },
+        }),
         prisma.pool.deleteMany({
             where: { lobbyId },
         }),
