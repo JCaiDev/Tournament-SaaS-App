@@ -1,7 +1,7 @@
-export const packMatches = (
-    pairs: { teamAId: string; teamBId: string }[],
+export const packMatches = <T extends { teamAId: string; teamBId: string }>(
+    pairs: T[],
     numberOfCourts: number,
-): { teamAId: string; teamBId: string; slot: number; court: number }[] => {
+): (T & { slot: number; court: number })[] => {
     if (numberOfCourts < 1)
         throw new Error('Court numbers cannot be less than 1');
     let remaining = [...pairs];
@@ -19,8 +19,7 @@ export const packMatches = (
                 !busy.has(match.teamBId)
             ) {
                 schedule.push({
-                    teamAId: match.teamAId,
-                    teamBId: match.teamBId,
+                    ...match,
                     slot,
                     court,
                 });
