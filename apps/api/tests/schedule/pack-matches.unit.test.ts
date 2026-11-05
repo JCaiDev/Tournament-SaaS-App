@@ -21,8 +21,17 @@ function expectNoClashes(schedule: Placed[]) {
 }
 
 describe('packMatches', () => {
+    // Exact-output tests use a fixed list (the paper exercise), not
+    // roundRobinPairs, so a change to the pairing order can't break them.
     it('4 teams, 2 courts -> 3 slots, 2 matches per slot', () => {
-        const pairs = roundRobinPairs(['A', 'B', 'C', 'D']);
+        const pairs = [
+            { teamAId: 'A', teamBId: 'B' },
+            { teamAId: 'A', teamBId: 'C' },
+            { teamAId: 'A', teamBId: 'D' },
+            { teamAId: 'B', teamBId: 'C' },
+            { teamAId: 'B', teamBId: 'D' },
+            { teamAId: 'C', teamBId: 'D' },
+        ];
 
         expect(packMatches(pairs, 2)).toEqual([
             { teamAId: 'A', teamBId: 'B', slot: 0, court: 1 },
@@ -35,7 +44,11 @@ describe('packMatches', () => {
     });
 
     it('1 court -> one match per slot, in list order', () => {
-        const pairs = roundRobinPairs(['A', 'B', 'C']);
+        const pairs = [
+            { teamAId: 'A', teamBId: 'B' },
+            { teamAId: 'A', teamBId: 'C' },
+            { teamAId: 'B', teamBId: 'C' },
+        ];
 
         expect(packMatches(pairs, 1)).toEqual([
             { teamAId: 'A', teamBId: 'B', slot: 0, court: 1 },
@@ -88,7 +101,16 @@ describe('packMatches', () => {
         expect(() => packMatches(pairs, 0)).toThrow();
     });
 
-    // Known weakness of list order: team 5 is last in every pair list, so it
-    // gets squeezed to the end. Best possible is 5 slots; today it takes 7.
-    it.todo('5 teams, 3 courts -> fits in 5 slots (needs circle-method order)');
+    // 5 teams can play at most 2 matches at once, so 10 matches need at least
+    // 5 slots. The old nested-loop order took 7 (team E squeezed to the end);
+    // circle order reaches the minimum.
+    it('5 teams, 3 courts -> 5 slots, the fewest possible', () => {
+        const schedule = packMatches(
+            roundRobinPairs(['A', 'B', 'C', 'D', 'E']),
+            3,
+        );
+
+        expect(Math.max(...schedule.map((m) => m.slot))).toBe(4);
+        expectNoClashes(schedule);
+    });
 });
