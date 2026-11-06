@@ -1,6 +1,5 @@
-// Circle method: each round, every team plays at most once, so the packer can
-// fill slots evenly. An odd pool gets a null "BYE" seat; whoever faces it sits
-// out that round.
+// Circle method: each round, every team plays at most once, so the packer can fill slots evenly.
+// An odd pool gets a null "BYE" seat; whoever faces it sits out that round.
 export const roundRobinPairs = (
     teamIds: string[],
 ): { teamAId: string; teamBId: string }[] => {

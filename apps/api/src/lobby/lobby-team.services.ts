@@ -10,6 +10,10 @@ import { assertLobbyManager } from './lobby-access';
 import { prisma } from '../prisma';
 import { AppError } from '../errors/AppErrors';
 import { Prisma, LobbyFormat } from '@prisma/client';
+import { roundRobinPairs } from '../schedule/round-robin';
+import { packMatches } from '../schedule/pack-matches';
+
+const MS_PER_MINUTE = 60_000;
 
 export const addTeamService = async (
     lobbyId: string,
@@ -208,9 +212,51 @@ export const generateScheduleService = async (
         orderBy: { name: 'asc' },
     });
 
+    const smallPool = pools.find((pool) => pool.teams.length < 2);
+
+    if (smallPool)
+        throw new AppError(
+            `${smallPool.name} should have at least 2 teams`,
+            409,
+        );
+
+    const allPairs = pools.flatMap((pool) => {
+        const ids = pool.teams.map((team) => team.id);
+        const pairs = roundRobinPairs(ids);
+        const tagged = pairs.map((pair) => ({ ...pair, poolId: pool.id }));
+        return tagged;
+    });
+
+    const schedule = packMatches(allPairs, input.courts);
+    const start = input.startTime ?? lobby.startTime;
+
+    const matches = schedule.map((match) => {
+        const { slot, ...rest } = match;
+        const startTime = new Date(
+            start.getTime() + slot * input.slotMinutes * MS_PER_MINUTE,
+        );
+        const row = {
+            ...rest,
+            lobbyId,
+            startTime,
+        };
+        return row;
+    });
+
     await prisma.$transaction([
         prisma.match.deleteMany({
             where: { lobbyId },
         }),
+        prisma.match.createMany({
+            data: matches,
+        }),
+        prisma.lobby.update({
+            where: { id: lobbyId },
+            data: { slotMinutes: input.slotMinutes },
+        }),
     ]);
+    return await prisma.match.findMany({
+        where: { lobbyId },
+        orderBy: [{ startTime: 'asc' }, { court: 'asc' }],
+    });
 };
