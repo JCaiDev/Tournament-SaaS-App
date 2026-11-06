@@ -4,8 +4,11 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   AddTeamRequest,
+  GenerateScheduleRequest,
+  Match,
   Pool,
   PoolListResponse,
+  ScheduleResponse,
   SetPoolsRequest,
   SetSeedsRequest,
   Team,
@@ -67,5 +70,23 @@ export class TeamService {
     return this.http
       .put<unknown>(`${this.baseUrl}/${lobbyId}/pools`, data)
       .pipe(map(() => undefined));
+  }
+
+  /**
+   * POST /lobbies/:lobbyId/schedule — 201; replaces the whole draft schedule.
+   * 409 when a team isn't in a pool, a pool has fewer than 2 teams, or the
+   * lobby isn't a tournament (the message is written for users).
+   */
+  generateSchedule(lobbyId: string, data: GenerateScheduleRequest): Observable<Match[]> {
+    return this.http
+      .post<ScheduleResponse>(`${this.baseUrl}/${lobbyId}/schedule`, data)
+      .pipe(map((res) => res.schedule));
+  }
+
+  /** GET /lobbies/:lobbyId/schedule — the saved draft schedule, organizer/admin only. */
+  listSchedule(lobbyId: string): Observable<Match[]> {
+    return this.http
+      .get<ScheduleResponse>(`${this.baseUrl}/${lobbyId}/schedule`)
+      .pipe(map((res) => res.schedule));
   }
 }

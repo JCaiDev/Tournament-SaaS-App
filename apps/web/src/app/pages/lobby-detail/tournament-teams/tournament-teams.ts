@@ -31,6 +31,8 @@ export class TournamentTeams implements OnInit {
 
   readonly lobbyId = input.required<string>();
   readonly canManage = input(false);
+  readonly lobbyStart = input<string | null>(null);
+  readonly lobbyEnd = input<string | null>(null);
 
   readonly teams = signal<Team[]>([]);
   readonly loading = signal(true);
