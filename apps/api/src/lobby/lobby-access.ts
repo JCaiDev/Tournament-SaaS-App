@@ -9,6 +9,7 @@ export const assertLobbyManager = async (lobbyId: string, actor: AuthUser) => {
         select: {
             organizerId: true,
             format: true,
+            startTime: true,
         },
     });
 

@@ -84,6 +84,13 @@ export const setPoolsSchema = z.object({
         ),
 });
 
+export const generateScheduleSchema = z.object({
+    courts: z.int().max(500).min(1),
+    startTime: z.coerce.date().optional(),
+    slotMinutes: z.int().min(20).max(240),
+});
+
+export type GenerateScheduleInput = z.infer<typeof generateScheduleSchema>;
 export type AddTeamInput = z.infer<typeof addTeamSchema>;
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
 export type TeamParamInput = z.infer<typeof teamParamSchema>;

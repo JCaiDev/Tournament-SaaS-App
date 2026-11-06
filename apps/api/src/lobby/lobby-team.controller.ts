@@ -6,6 +6,7 @@ import {
     TeamParamInput,
     SetSeedsInput,
     SetPoolsInput,
+    GenerateScheduleInput,
 } from './lobby-team.schemas';
 import * as TeamServices from './lobby-team.services';
 import { LobbyIdParamInput } from './lobby.schemas';
@@ -146,6 +147,30 @@ export const listPools = async (
         const pools = await TeamServices.listPoolsService(lobbyId, req.user);
 
         return res.status(200).json({ message: 'List of pools', pools });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const generateSchedule = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        if (!req.user)
+            return next(new AppError('Authentication required', 401));
+        const { lobbyId } = req.validatedParams as LobbyIdParamInput;
+        const scheduleData = req.validatedBody as GenerateScheduleInput;
+        const schedule = await TeamServices.generateScheduleService(
+            lobbyId,
+            req.user,
+            scheduleData,
+        );
+
+        return res
+            .status(201)
+            .json({ message: 'Schedule Generated', schedule });
     } catch (error) {
         next(error);
     }
