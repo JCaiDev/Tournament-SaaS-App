@@ -8,6 +8,7 @@ import { validateBody, validateParams } from '../middleware/validate';
 import { lobbyIdParamSchema } from './lobby.schemas';
 import {
     addTeamSchema,
+    generateScheduleSchema,
     setPoolsSchema,
     setSeedsSchema,
     teamParamSchema,
@@ -74,6 +75,15 @@ router.get(
     requireRole(...ORGANIZER_ROLES),
     validateParams(lobbyIdParamSchema),
     TeamController.listPools,
+);
+
+router.post(
+    '/:lobbyId/schedule',
+    requireAuth,
+    requireRole(...ORGANIZER_ROLES),
+    validateParams(lobbyIdParamSchema),
+    validateBody(generateScheduleSchema),
+    TeamController.generateSchedule,
 );
 
 export default router;
