@@ -1,5 +1,6 @@
 import {
     AddTeamInput,
+    GenerateScheduleInput,
     SetPoolsInput,
     SetSeedsInput,
     UpdateTeamInput,
@@ -176,7 +177,40 @@ export const listPoolsService = async (lobbyId: string, actor: AuthUser) => {
 
     return await prisma.pool.findMany({
         where: { lobbyId },
-        include: { teams: true },
+        include: { teams: { orderBy: [{ seed: 'asc' }, { name: 'asc' }] } },
         orderBy: { name: 'asc' },
     });
+};
+
+export const generateScheduleService = async (
+    lobbyId: string,
+    actor: AuthUser,
+    input: GenerateScheduleInput,
+) => {
+    const lobby = await assertLobbyManager(lobbyId, actor);
+    if (lobby.format !== LobbyFormat.TOURNAMENT)
+        throw new AppError(
+            'Auto scheduling is only available for tournaments',
+            409,
+        );
+    const unassignedCount = await prisma.team.count({
+        where: { lobbyId, poolId: null },
+    });
+    if (unassignedCount !== 0)
+        throw new AppError(
+            `${unassignedCount} teams are not in a pool yet`,
+            409,
+        );
+
+    const pools = await prisma.pool.findMany({
+        where: { lobbyId },
+        include: { teams: { orderBy: [{ seed: 'asc' }, { name: 'asc' }] } },
+        orderBy: { name: 'asc' },
+    });
+
+    await prisma.$transaction([
+        prisma.match.deleteMany({
+            where: { lobbyId },
+        }),
+    ]);
 };
