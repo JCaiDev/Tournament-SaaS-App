@@ -89,9 +89,14 @@ export const deleteTeamService = async (
     await assertLobbyManager(lobbyId, actor);
 
     try {
-        await prisma.team.delete({
-            where: { id: teamId, lobbyId },
-        });
+        await prisma.$transaction([
+            prisma.match.deleteMany({
+                where: { lobbyId },
+            }),
+            prisma.team.delete({
+                where: { id: teamId, lobbyId },
+            }),
+        ]);
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
             if (error.code === 'P2025')
