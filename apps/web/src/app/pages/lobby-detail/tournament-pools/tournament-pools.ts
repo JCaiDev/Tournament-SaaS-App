@@ -9,6 +9,7 @@ import { TeamService } from '../../../services/team.service';
 import { PoolLayout, Team } from '../../../models/team';
 import { SerialSaver } from '../../../shared/autosave/serial-saver';
 import { poolName, snakePools } from '../../../shared/pool-generator/snake-pools';
+import { TournamentSchedule } from '../tournament-schedule/tournament-schedule';
 
 const UNASSIGNED = -1;
 
@@ -34,7 +35,7 @@ interface Column extends PoolView {
 // tournament goes live (not built yet), so the parent only shows it to managers.
 @Component({
   selector: 'app-tournament-pools',
-  imports: [NgTemplateOutlet, CdkDropListGroup, CdkDropList, CdkDrag],
+  imports: [NgTemplateOutlet, CdkDropListGroup, CdkDropList, CdkDrag, TournamentSchedule],
   templateUrl: './tournament-pools.html',
   styleUrl: './tournament-pools.css',
 })
@@ -45,6 +46,9 @@ export class TournamentPools implements OnInit, OnDestroy {
   // Live list from the parent: a team added there shows up as unseeded +
   // Unassigned here; a deleted one disappears (the API already unlinked it).
   readonly teams = input.required<Team[]>();
+  // For the schedule step: the default first-match time and the "runs late" warning.
+  readonly lobbyStart = input<string | null>(null);
+  readonly lobbyEnd = input<string | null>(null);
 
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
@@ -64,6 +68,10 @@ export class TournamentPools implements OnInit, OnDestroy {
       pools: this.layout().map((p) => ({ name: p.name, teamIds: this.liveIds(p.teamIds) })),
     }),
   );
+
+  // The schedule step calls this before generating, so a pools autosave that's
+  // still waiting to go out can't land after the new schedule and delete it.
+  readonly settlePools = () => this.poolSaver.settle();
 
   private readonly teamById = computed(() => new Map(this.teams().map((t) => [t.id, t])));
 
