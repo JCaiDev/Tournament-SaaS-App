@@ -10,6 +10,7 @@ import {
 } from './lobby-team.schemas';
 import * as TeamServices from './lobby-team.services';
 import { LobbyIdParamInput } from './lobby.schemas';
+import { request } from 'http';
 
 export const addTeam = async (
     req: Request,
@@ -171,6 +172,26 @@ export const generateSchedule = async (
         return res
             .status(201)
             .json({ message: 'Schedule Generated', schedule });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const listSchedule = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        if (!req.user) {
+            return next(new AppError('Authentication required', 401));
+        }
+        const { lobbyId } = req.validatedParams as LobbyIdParamInput;
+        const schedule = await TeamServices.listScheduleService(
+            lobbyId,
+            req.user,
+        );
+        return res.status(200).json({ message: 'Schedule', schedule });
     } catch (error) {
         next(error);
     }
