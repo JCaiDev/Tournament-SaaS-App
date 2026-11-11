@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import {
     describe,
@@ -80,17 +81,19 @@ function pairing(match: MatchBody, names: Record<string, string>) {
     return [names[match.teamAId], names[match.teamBId]].sort().join(' vs ');
 }
 
-describe('POST /lobbies/:lobbyId/schedule (Generate Schedule)', () => {
-    beforeEach(async () => {
-        await resetDb();
-    });
-    afterEach(async () => {
-        await resetDb();
-    });
-    afterAll(async () => {
-        await disconnectDb();
-    });
+// File-level hooks: they apply to every describe block below. (Inside one
+// describe, afterAll would disconnect the DB before the next describe runs.)
+beforeEach(async () => {
+    await resetDb();
+});
+afterEach(async () => {
+    await resetDb();
+});
+afterAll(async () => {
+    await disconnectDb();
+});
 
+describe('POST /lobbies/:lobbyId/schedule (Generate Schedule)', () => {
     it('Happy Path: 2 pools, 2 courts -> 201, a valid schedule is saved', async () => {
         // ARRANGE
         const { organizer, lobby, poolA, poolB, names } = await seedTournament();
@@ -262,5 +265,137 @@ describe('POST /lobbies/:lobbyId/schedule (Generate Schedule)', () => {
         // ASSERT
         expect(res.status).toBe(400);
         expect(res.body.error.message).toBe('Invalid request body');
+    });
+});
+
+describe('GET /lobbies/:lobbyId/schedule (List Schedule)', () => {
+    it('Happy Path: saved matches -> 200, sorted by time then court, this lobby only', async () => {
+        // ARRANGE
+        const { organizer, lobby, poolA } = await seedTournament();
+        const [aces, blockers, diggers] = await prisma.team.findMany({
+            where: { poolId: poolA.id },
+            orderBy: { name: 'asc' },
+        });
+        const nine = new Date('2026-11-15T09:00:00.000Z');
+        const ten = new Date('2026-11-15T10:00:00.000Z');
+        const inPoolA = { lobbyId: lobby.id, poolId: poolA.id };
+        // Saved in the WRONG order on purpose. If the service loses its
+        // orderBy, the rows come back in this order and the test fails.
+        await prisma.match.createMany({
+            data: [
+                { ...inPoolA, teamAId: aces.id, teamBId: blockers.id, court: 1, startTime: ten },
+                { ...inPoolA, teamAId: aces.id, teamBId: diggers.id, court: 2, startTime: nine },
+                { ...inPoolA, teamAId: blockers.id, teamBId: diggers.id, court: 1, startTime: nine },
+            ],
+        });
+
+        // A second tournament with its own match, which must NOT show up.
+        const other = await seedTournament();
+        const [eagles, falcons] = await prisma.team.findMany({
+            where: { poolId: other.poolB.id },
+            orderBy: { name: 'asc' },
+        });
+        await prisma.match.create({
+            data: {
+                lobbyId: other.lobby.id,
+                poolId: other.poolB.id,
+                teamAId: eagles.id,
+                teamBId: falcons.id,
+                court: 1,
+                startTime: nine,
+            },
+        });
+
+        // ACT
+        const res = await request(app)
+            .get(`/lobbies/${lobby.id}/schedule`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER));
+
+        // ASSERT
+        expect(res.status).toBe(200);
+        const matches: MatchBody[] = res.body.schedule;
+        expect(matches.map((m) => [m.startTime, m.court])).toEqual([
+            [nine.toISOString(), 1],
+            [nine.toISOString(), 2],
+            [ten.toISOString(), 1],
+        ]);
+        for (const match of matches) expect(match.lobbyId).toBe(lobby.id);
+    });
+
+    // "No schedule yet" is a true answer, not a missing thing: 200 + [].
+    it('Happy Path: nothing generated yet -> 200 with an empty list', async () => {
+        // ARRANGE
+        const { organizer, lobby } = await seedTournament();
+
+        // ACT
+        const res = await request(app)
+            .get(`/lobbies/${lobby.id}/schedule`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER));
+
+        // ASSERT
+        expect(res.status).toBe(200);
+        expect(res.body.schedule).toEqual([]);
+    });
+
+    // The schedule is a private draft: no login, no data.
+    it('Sad Path: no token -> 401', async () => {
+        // ARRANGE
+        const { lobby } = await seedTournament();
+
+        // ACT
+        const res = await request(app).get(`/lobbies/${lobby.id}/schedule`);
+
+        // ASSERT
+        expect(res.status).toBe(401);
+        expect(res.body.schedule).toBeUndefined();
+    });
+
+    // IDOR guard: the right role is not enough, it must be THEIR lobby.
+    it('Sad Path: organizer of a different lobby -> 403', async () => {
+        // ARRANGE
+        const { lobby } = await seedTournament();
+        const stranger = await seedUser();
+
+        // ACT
+        const res = await request(app)
+            .get(`/lobbies/${lobby.id}/schedule`)
+            .set('Authorization', makeAuthHeader(stranger.id, Role.ORGANIZER));
+
+        // ASSERT
+        expect(res.status).toBe(403);
+        expect(res.body.schedule).toBeUndefined();
+    });
+
+    it('Sad Path: lobby does not exist -> 404', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+
+        // ACT
+        const res = await request(app)
+            .get(`/lobbies/${randomUUID()}/schedule`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER));
+
+        // ASSERT
+        expect(res.status).toBe(404);
+        expect(res.body.error.message).toBe('Lobby not found');
+    });
+
+    it('Sad Path: pickup lobby -> 409', async () => {
+        // ARRANGE
+        const organizer = await seedUser();
+        const lobby = await seedLobby(organizer.id, {
+            format: LobbyFormat.PICKUP,
+        });
+
+        // ACT
+        const res = await request(app)
+            .get(`/lobbies/${lobby.id}/schedule`)
+            .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER));
+
+        // ASSERT
+        expect(res.status).toBe(409);
+        expect(res.body.error.message).toBe(
+            'Pool-play schedules are only available for tournaments',
+        );
     });
 });
