@@ -265,3 +265,17 @@ export const generateScheduleService = async (
         orderBy: [{ startTime: 'asc' }, { court: 'asc' }],
     });
 };
+
+export const listScheduleService = async (lobbyId: string, actor: AuthUser) => {
+    const lobby = await assertLobbyManager(lobbyId, actor);
+    if (lobby.format !== LobbyFormat.TOURNAMENT)
+        throw new AppError(
+            'Pool-play schedules are only available for tournaments',
+            409,
+        );
+
+    return await prisma.match.findMany({
+        where: { lobbyId },
+        orderBy: [{ startTime: 'asc' }, { court: 'asc' }],
+    });
+};

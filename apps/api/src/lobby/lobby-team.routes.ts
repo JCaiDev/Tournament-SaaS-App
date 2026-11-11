@@ -86,4 +86,12 @@ router.post(
     TeamController.generateSchedule,
 );
 
+router.get(
+    '/:lobbyId/schedule',
+    requireAuth,
+    requireRole(...ORGANIZER_ROLES),
+    validateParams(lobbyIdParamSchema),
+    TeamController.listSchedule,
+);
+
 export default router;
