@@ -152,6 +152,20 @@
         </div>
       }
     </div>
+
+    <!-- Step 3: schedule (built by the API from the saved pools) -->
+    <div class="step">
+      <app-tournament-schedule
+        [lobbyId]="lobbyId()"
+        [teams]="teams()"
+        [pools]="poolViews()"
+        [unassignedCount]="unassignedTeams().length"
+        [poolsSavedCount]="poolSaver.savedCount()"
+        [beforeGenerate]="settlePools"
+        [lobbyStart]="lobbyStart()"
+        [lobbyEnd]="lobbyEnd()"
+      />
+    </div>
   }
 </section>
 

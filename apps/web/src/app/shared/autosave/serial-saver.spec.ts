@@ -82,4 +82,50 @@ describe('SerialSaver', () => {
     respond(1);
     expect(saver.status()).toBe('saved');
   });
+
+  describe('settle()', () => {
+    it('resolves true right away when nothing is waiting to be saved', async () => {
+      await expectAsync(saver.settle()).toBeResolvedTo(true);
+      expect(sentValues).toEqual([]);
+    });
+
+    it('sends a pending change now (no debounce wait) and resolves when it lands', async () => {
+      current = 1;
+      saver.schedule();
+      const settled = saver.settle();
+      expect(sentValues).toEqual([1]); // sent immediately, not after 1s
+
+      respond(0);
+      await expectAsync(settled).toBeResolvedTo(true);
+      expect(saver.savedCount()).toBe(1);
+    });
+
+    it('waits for the follow-up save too, so the latest state is on the server', async () => {
+      current = 1;
+      saver.schedule();
+      jasmine.clock().tick(1000); // request 0 in flight
+      current = 2;
+      saver.schedule();
+      let done = false;
+      const settled = saver.settle().then((ok) => (done = ok));
+
+      respond(0); // the follow-up (current = 2) starts now
+      await Promise.resolve();
+      expect(done).toBe(false);
+
+      respond(1);
+      await settled;
+      expect(done).toBe(true);
+      expect(sentValues).toEqual([1, 2]);
+    });
+
+    it('resolves false when the save fails', async () => {
+      current = 1;
+      saver.schedule();
+      const settled = saver.settle();
+      requests[0].error(new Error('500'));
+      await expectAsync(settled).toBeResolvedTo(false);
+      expect(saver.savedCount()).toBe(0);
+    });
+  });
 });

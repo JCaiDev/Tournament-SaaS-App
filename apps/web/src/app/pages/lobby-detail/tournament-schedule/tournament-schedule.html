@@ -1,0 +1,180 @@
+<div class="step-head">
+  <h4>3. Schedule</h4>
+  @if (summary(); as s) {
+    <span class="ready-badge">{{ s.matchCount }} matches saved</span>
+  }
+</div>
+<p class="hint">Every team plays everyone else in its pool once. Matches are spread across your courts so no team plays twice at the same time.</p>
+
+<!-- Settings -->
+<form class="settings" [formGroup]="form" (ngSubmit)="generate()" novalidate>
+  <div class="fields">
+    <div class="field">
+      <label class="field-label" for="sched-courts">Courts</label>
+      <div class="stepper" [class.invalid]="fieldInvalid('courts')">
+        <button type="button" class="stepper-btn" (click)="stepCourts(-1)"
+          [disabled]="form.controls.courts.value <= limits.COURTS_MIN" aria-label="One court fewer">−</button>
+        <input id="sched-courts" type="number" inputmode="numeric" formControlName="courts"
+          [min]="limits.COURTS_MIN" [max]="limits.COURTS_MAX" />
+        <button type="button" class="stepper-btn" (click)="stepCourts(1)"
+          [disabled]="form.controls.courts.value >= limits.COURTS_MAX" aria-label="One more court">+</button>
+      </div>
+      @if (fieldInvalid('courts')) {
+        <span class="field-error">{{ limits.COURTS_MIN }}–{{ limits.COURTS_MAX }} courts</span>
+      }
+    </div>
+
+    <div class="field field-start">
+      <span class="field-label">First match</span>
+      <app-datetime-picker formControlName="startTime" defaultTime="09:00" />
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="sched-slot">Slot length</label>
+      <div class="slot-input" [class.invalid]="fieldInvalid('slotMinutes')">
+        <input id="sched-slot" type="number" inputmode="numeric" step="5" formControlName="slotMinutes"
+          [min]="limits.SLOT_MIN" [max]="limits.SLOT_MAX" aria-describedby="sched-slot-hint" />
+        <span class="unit">min</span>
+      </div>
+      <div class="presets" role="group" aria-label="Common slot lengths">
+        @for (preset of slotPresets; track preset) {
+          <button type="button" class="preset" [class.active]="form.controls.slotMinutes.value === preset"
+            [attr.aria-pressed]="form.controls.slotMinutes.value === preset" (click)="setSlot(preset)">{{ preset }}</button>
+        }
+      </div>
+      <span id="sched-slot-hint" class="field-hint">Warm-up + match + changeover</span>
+      @if (fieldInvalid('slotMinutes')) {
+        <span class="field-error">{{ limits.SLOT_MIN }}–{{ limits.SLOT_MAX }} minutes</span>
+      }
+    </div>
+  </div>
+
+  @if (blockers().length > 0) {
+    <div class="callout callout-warn" role="status">
+      <strong>Before you can generate:</strong>
+      <ul>
+        @for (reason of blockers(); track reason) {
+          <li>{{ reason }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  <div class="actions">
+    <button type="submit" class="btn btn-primary generate-btn"
+      [disabled]="generating() || blockers().length > 0" [attr.aria-busy]="generating()">
+      @if (generating()) {
+        <span class="spinner" aria-hidden="true"></span> Generating…
+      } @else {
+        {{ hasSchedule() ? 'Regenerate schedule' : 'Generate schedule' }}
+      }
+    </button>
+    @if (estimate(); as e) {
+      @if (blockers().length === 0) {
+        <span class="estimate">
+          {{ e.matchCount }} matches · at least {{ e.slots }} {{ e.slots === 1 ? 'slot' : 'slots' }} · about {{ e.duration }}
+        </span>
+      }
+    }
+  </div>
+
+  @if (error()) {
+    <p class="callout callout-error" role="alert">{{ error() }}</p>
+  }
+</form>
+
+<!-- Result -->
+@if (loading()) {
+  <div class="skeleton" aria-hidden="true">
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  </div>
+  <span class="sr-only" role="status">Loading the schedule…</span>
+} @else if (staleReason(); as reason) {
+  <div class="callout callout-info" role="status">
+    {{ reason === 'pools' ? 'The pools changed' : 'A team was deleted' }}, so the old schedule was cleared.
+    Generate it again when the pools are ready.
+  </div>
+} @else if (summary(); as s) {
+  <div class="schedule">
+    <dl class="stats">
+      <div class="stat"><dt>Matches</dt><dd>{{ s.matchCount }}</dd></div>
+      <div class="stat"><dt>Courts</dt><dd>{{ s.courtCount }}</dd></div>
+      <div class="stat stat-wide"><dt>{{ s.day }}</dt><dd>{{ s.start }} – {{ s.end }}</dd></div>
+      <div class="stat"><dt>Length</dt><dd>{{ s.length }}</dd></div>
+      <div class="stat"><dt>Slot</dt><dd>{{ s.slot }} min</dd></div>
+    </dl>
+
+    @if (s.overrun; as o) {
+      <div class="callout callout-warn" role="status">
+        Runs {{ o.by }} past the lobby’s end time ({{ o.lobbyEnd }}). Add a court, shorten the slots, or start earlier.
+      </div>
+    }
+
+    <div class="toolbar">
+      <label class="highlight-field">
+        <span>Highlight a team</span>
+        <select (change)="onHighlight($event)" [value]="highlightTeamId() ?? ''">
+          <option value="">All teams</option>
+          @for (team of scheduledTeams(); track team.id) {
+            <option [value]="team.id">{{ team.name }}</option>
+          }
+        </select>
+      </label>
+      <ul class="legend" aria-label="Pool colours">
+        @for (item of legend(); track item.name) {
+          <li class="legend-item pool-c{{ item.colour }}"><span class="dot"></span>{{ item.name }}</li>
+        }
+      </ul>
+    </div>
+
+    @if (highlightSummary(); as h) {
+      <p class="highlight-summary" role="status">
+        <strong>{{ h.name }}</strong> plays {{ h.count }} {{ h.count === 1 ? 'match' : 'matches' }}: {{ h.times }}
+      </p>
+    }
+
+    <ol class="timeline">
+      @for (slot of slots(); track slot.key) {
+        <li class="slot">
+          <div class="slot-time">
+            <span class="time">{{ slot.time }}</span>
+            <span class="round">Round {{ slot.round }}</span>
+          </div>
+          <ul class="slot-matches">
+            @for (m of slot.matches; track m.id) {
+              <li class="match pool-c{{ m.colour }}" [class.dimmed]="m.dimmed" [attr.aria-label]="m.label">
+                <div class="match-head">
+                  <span class="court">Court {{ m.court }}</span>
+                  <span class="pool-chip">{{ m.pool }}</span>
+                </div>
+                <div class="teams">
+                  <span class="team" [class.highlighted]="m.aIsHighlighted" [title]="m.teamA">{{ m.teamA }}</span>
+                  <span class="vs" aria-hidden="true">vs</span>
+                  <span class="team" [class.highlighted]="m.bIsHighlighted" [title]="m.teamB">{{ m.teamB }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+        </li>
+      }
+    </ol>
+  </div>
+} @else {
+  <div class="empty">
+    <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="16" rx="2.5" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+      <path d="M7.5 14h3M13.5 14h3M7.5 17.5h3" />
+    </svg>
+    <p class="empty-title">No schedule yet</p>
+    <p class="muted">
+      @if (blockers().length > 0) {
+        Finish the pools above, then generate the schedule here.
+      } @else {
+        Set your courts and slot length, then press <strong>Generate schedule</strong>. You can regenerate as often as you like while it’s a draft.
+      }
+    </p>
+  </div>
+}

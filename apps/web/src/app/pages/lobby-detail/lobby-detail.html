@@ -158,7 +158,7 @@
 
       @if (isTournament()) {
         <!-- Tournaments: saved teams from the API instead of the pickup roster. -->
-        <app-tournament-teams [lobbyId]="l.id" [canManage]="canManage()" />
+        <app-tournament-teams [lobbyId]="l.id" [canManage]="canManage()" [lobbyStart]="l.startTime" [lobbyEnd]="l.endTime" />
       } @else {
       <section class="roster">
         <div class="summary">

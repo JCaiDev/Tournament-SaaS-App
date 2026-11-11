@@ -63,3 +63,31 @@ export interface PoolListResponse {
   message: string;
   pools: Pool[];
 }
+
+// A Match row, as POST and GET /lobbies/:lobbyId/schedule return it.
+// The API stores only the planned start; a match ends at startTime + the
+// lobby's slot length (endTime is derived, never stored).
+export interface Match {
+  id: string;
+  lobbyId: string;
+  poolId: string;
+  teamAId: string;
+  teamBId: string;
+  refTeamId: string | null; // ref duty isn't assigned yet
+  court: number; // 1-based label
+  startTime: string; // ISO
+}
+
+// POST /lobbies/:lobbyId/schedule. startTime is optional: the API falls back
+// to the lobby's start time.
+export interface GenerateScheduleRequest {
+  courts: number; // 1–500
+  slotMinutes: number; // 20–240
+  startTime?: string; // ISO
+}
+
+// Both schedule endpoints: matches sorted by start time, then court.
+export interface ScheduleResponse {
+  message: string;
+  schedule: Match[];
+}
