@@ -250,6 +250,72 @@ describe('POST /lobbies/:lobbyId/schedule (Generate Schedule)', () => {
         );
     });
 
+    // Court modes. 2 pools of 4 teams on 1 court, so the pools MUST share it
+    // and the order of the list decides who plays when. Each pool has 6 matches.
+    describe('courtMode', () => {
+        async function seedTwoPoolsOfFour() {
+            const organizer = await seedUser();
+            const lobby = await seedLobby(organizer.id, {
+                format: LobbyFormat.TOURNAMENT,
+            });
+            const makePool = async (name: string, teamNames: string[]) => {
+                const teams = [];
+                for (const teamName of teamNames) {
+                    teams.push(await createTeam(lobby.id, teamName));
+                }
+                return createPool(lobby.id, name, teams.map((t) => t.id));
+            };
+            const poolA = await makePool('Pool A', ['A1', 'A2', 'A3', 'A4']);
+            const poolB = await makePool('Pool B', ['B1', 'B2', 'B3', 'B4']);
+            return { organizer, lobby, poolA, poolB };
+        }
+
+        // "ABAB…": which pool plays in each slot, in time order.
+        function poolOrder(matches: MatchBody[], poolAId: string) {
+            return matches.map((m) => (m.poolId === poolAId ? 'A' : 'B')).join('');
+        }
+
+        async function generate(courtMode?: string) {
+            const { organizer, lobby, poolA } = await seedTwoPoolsOfFour();
+            const res = await request(app)
+                .post(`/lobbies/${lobby.id}/schedule`)
+                .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+                .send({ courts: 1, slotMinutes: 40, courtMode });
+            return { res, poolA };
+        }
+
+        // One pool after another: all of Pool A, then all of Pool B.
+        it('WAVES -> the first pool finishes before the next one starts', async () => {
+            const { res, poolA } = await generate('WAVES');
+
+            expect(res.status).toBe(201);
+            expect(poolOrder(res.body.schedule, poolA.id)).toBe('AAAAAABBBBBB');
+        });
+
+        // Round 0 of both pools (2 matches each), then round 1, then round 2.
+        it('TAKE_TURNS -> pools alternate round by round', async () => {
+            const { res, poolA } = await generate('TAKE_TURNS');
+
+            expect(res.status).toBe(201);
+            expect(poolOrder(res.body.schedule, poolA.id)).toBe('AABBAABBAABB');
+        });
+
+        // Old clients don't send the field; they keep the behaviour they had.
+        it('no courtMode in the body -> behaves like WAVES', async () => {
+            const { res, poolA } = await generate(undefined);
+
+            expect(res.status).toBe(201);
+            expect(poolOrder(res.body.schedule, poolA.id)).toBe('AAAAAABBBBBB');
+        });
+
+        it('unknown courtMode -> 400', async () => {
+            const { res } = await generate('FASTEST');
+
+            expect(res.status).toBe(400);
+            expect(res.body.error.message).toBe('Invalid request body');
+        });
+    });
+
     // Zod stops this before the service: courts 0 would make packMatches throw
     // a plain Error, which would be a 500.
     it('Sad Path: 0 courts -> 400', async () => {

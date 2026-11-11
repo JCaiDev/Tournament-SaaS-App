@@ -3,15 +3,17 @@ import { roundRobinPairs } from '../../src/schedule/round-robin';
 
 // Pure function: no DB or HTTP, so no resetDb / request(app) here.
 describe('roundRobinPairs', () => {
-    // Circle order: round 1 (A-D, B-C), round 2 (A-C, D-B), round 3 (A-B, C-D).
+    // Circle order: round 0 (A-D, B-C), round 1 (A-C, D-B), round 2 (A-B, C-D).
+    // Each match carries its round (0-based) so the service can order
+    // "round 0 of every pool, then round 1…" for the TAKE_TURNS court mode.
     it('4 teams -> 6 matches in rounds, everyone plays once per round', () => {
         expect(roundRobinPairs(['A', 'B', 'C', 'D'])).toEqual([
-            { teamAId: 'A', teamBId: 'D' },
-            { teamAId: 'B', teamBId: 'C' },
-            { teamAId: 'A', teamBId: 'C' },
-            { teamAId: 'D', teamBId: 'B' },
-            { teamAId: 'A', teamBId: 'B' },
-            { teamAId: 'C', teamBId: 'D' },
+            { teamAId: 'A', teamBId: 'D', round: 0 },
+            { teamAId: 'B', teamBId: 'C', round: 0 },
+            { teamAId: 'A', teamBId: 'C', round: 1 },
+            { teamAId: 'D', teamBId: 'B', round: 1 },
+            { teamAId: 'A', teamBId: 'B', round: 2 },
+            { teamAId: 'C', teamBId: 'D', round: 2 },
         ]);
     });
 
@@ -19,17 +21,35 @@ describe('roundRobinPairs', () => {
     // and a different team sits out each time.
     it('3 teams -> 3 matches, one per round', () => {
         expect(roundRobinPairs(['A', 'B', 'C'])).toEqual([
-            { teamAId: 'B', teamBId: 'C' },
-            { teamAId: 'A', teamBId: 'C' },
-            { teamAId: 'A', teamBId: 'B' },
+            { teamAId: 'B', teamBId: 'C', round: 0 },
+            { teamAId: 'A', teamBId: 'C', round: 1 },
+            { teamAId: 'A', teamBId: 'B', round: 2 },
         ]);
     });
 
     it('2 teams -> 1 match', () => {
         expect(roundRobinPairs(['A', 'B'])).toEqual([
-            { teamAId: 'A', teamBId: 'B' },
+            { teamAId: 'A', teamBId: 'B', round: 0 },
         ]);
     });
+
+    // What makes a "round" a round: its matches can all be played at the same
+    // time, so no team may appear twice under one round number.
+    it.each([2, 3, 4, 5, 6, 7, 8])(
+        '%i teams -> no team plays twice in the same round',
+        (n) => {
+            const teamIds = Array.from({ length: n }, (_, k) => `T${k}`);
+            const seen = new Set<string>();
+
+            for (const pair of roundRobinPairs(teamIds)) {
+                for (const team of [pair.teamAId, pair.teamBId]) {
+                    const key = `${pair.round}:${team}`;
+                    expect(seen.has(key)).toBe(false);
+                    seen.add(key);
+                }
+            }
+        },
+    );
 
     it('1 team -> no matches', () => {
         expect(roundRobinPairs(['A'])).toEqual([]);

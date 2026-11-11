@@ -232,11 +232,14 @@ export const generateScheduleService = async (
         return tagged;
     });
 
+    if (input.courtMode === 'TAKE_TURNS')
+        allPairs.sort((a, b) => a.round - b.round);
+
     const schedule = packMatches(allPairs, input.courts);
     const start = input.startTime ?? lobby.startTime;
 
     const matches = schedule.map((match) => {
-        const { slot, ...rest } = match;
+        const { slot, round, ...rest } = match;
         const startTime = new Date(
             start.getTime() + slot * input.slotMinutes * MS_PER_MINUTE,
         );
