@@ -42,6 +42,9 @@ const BASE_TIME_OPTIONS: TimeOption[] = buildTimeOptions();
 export class DatetimePicker implements ControlValueAccessor {
   // "HH:mm" the time list opens on while the field is empty.
   readonly defaultTime = input(DEFAULT_ANCHOR);
+  // When true, choosing a date while the time is still empty selects defaultTime,
+  // so one click gives a complete value. The time stays editable.
+  readonly fillDefaultTime = input(false);
 
   readonly date = signal('');
   readonly time = signal('');
@@ -100,6 +103,7 @@ export class DatetimePicker implements ControlValueAccessor {
 
   onDateInput(value: string): void {
     this.date.set(value);
+    if (value && !this.time() && this.fillDefaultTime()) this.time.set(this.defaultTime());
     this.emit();
   }
 

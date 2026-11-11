@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { LobbyService } from '../../services/lobby.service';
 import { GENDER_LABELS, GenderFormat, SkillLevel, SKILL_LABELS, UpdateLobbyRequest } from '../../models/lobby';
 import { DatetimePicker } from '../../shared/datetime-picker/datetime-picker';
+import { toUtcIso } from '../../shared/datetime-picker/local-datetime';
 /**
  * Converts an ISO string (e.g. "2026-07-26T19:11:00.000Z") to the format
  * that <input type="datetime-local"> expects: "2026-07-26T19:11"
@@ -97,6 +98,9 @@ export class EditLobby implements OnInit {
     const raw = this.form.getRawValue();
     const payload: UpdateLobbyRequest = {
       ...raw,
+      // The form holds local wall-clock times; the API stores exact UTC moments.
+      startTime: toUtcIso(raw.startTime),
+      endTime: toUtcIso(raw.endTime),
       capacity: raw.capacity > 0 ? raw.capacity : null,
     };
     this.lobbyService.updateLobby(id, payload).subscribe({

@@ -32,12 +32,13 @@
 
       <div class="field">
         <label for="startTime">Start time</label>
-        <app-datetime-picker formControlName="startTime" defaultTime="09:00" />
+        <!-- Tournaments: picking the date fills in 8:00 AM, and the end time follows (4:00 PM). -->
+        <app-datetime-picker formControlName="startTime" [defaultTime]="defaultTimes.start" [fillDefaultTime]="isTournament" />
       </div>
 
       <div class="field">
         <label for="endTime">End time</label>
-        <app-datetime-picker formControlName="endTime" defaultTime="17:00" />
+        <app-datetime-picker formControlName="endTime" [defaultTime]="defaultTimes.end" />
       </div>
 
       <div class="field">
