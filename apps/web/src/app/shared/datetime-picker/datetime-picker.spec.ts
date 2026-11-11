@@ -81,3 +81,44 @@ describe('DatetimePicker time dropdown', () => {
     expect(changes).toEqual([]);
   });
 });
+
+describe('DatetimePicker fillDefaultTime', () => {
+  let fixture: ComponentFixture<DatetimePicker>;
+  let picker: DatetimePicker;
+  let changes: string[];
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(DatetimePicker);
+    picker = fixture.componentInstance;
+    changes = [];
+    picker.registerOnChange((value) => changes.push(value));
+    fixture.componentRef.setInput('defaultTime', '08:00');
+  });
+
+  it('off (the default): a date alone is not a complete value', () => {
+    fixture.detectChanges();
+
+    picker.onDateInput('2026-11-15');
+
+    expect(changes).toEqual(['']);
+  });
+
+  it('on: choosing a date selects the default time', () => {
+    fixture.componentRef.setInput('fillDefaultTime', true);
+    fixture.detectChanges();
+
+    picker.onDateInput('2026-11-15');
+
+    expect(changes).toEqual(['2026-11-15T08:00']);
+  });
+
+  it('on: never overwrites a time the user already chose', () => {
+    fixture.componentRef.setInput('fillDefaultTime', true);
+    fixture.detectChanges();
+    picker.onTimeInput('10:30');
+
+    picker.onDateInput('2026-11-15');
+
+    expect(changes.at(-1)).toBe('2026-11-15T10:30');
+  });
+});

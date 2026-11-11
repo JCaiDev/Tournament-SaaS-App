@@ -8,10 +8,17 @@ import { CreateLobbyRequest, GenderFormat, GENDER_LABELS, LobbyFormat, SkillLeve
 import { DatetimePicker } from '../../shared/datetime-picker/datetime-picker';
 import { FormatIcon } from '../../shared/format-icon/format-icon';
 import { LOBBY_FORMATS } from '../../shared/format-icon/lobby-formats';
-import { addHours } from '../../shared/datetime-picker/local-datetime';
+import { addHours, toUtcIso } from '../../shared/datetime-picker/local-datetime';
 
 // How long a lobby usually runs; used to pre-fill the end time.
-const DEFAULT_HOURS: Record<LobbyFormat, number> = { PICKUP: 2, TOURNAMENT: 6 };
+// A tournament day is 8:00 AM → 4:00 PM unless the organizer says otherwise.
+const DEFAULT_HOURS: Record<LobbyFormat, number> = { PICKUP: 2, TOURNAMENT: 8 };
+
+// The time each picker suggests while it's empty ("HH:mm").
+const DEFAULT_TIMES: Record<LobbyFormat, { start: string; end: string }> = {
+    PICKUP: { start: '09:00', end: '17:00' },
+    TOURNAMENT: { start: '08:00', end: '16:00' },
+};
 
 @Component({
     selector: 'app-create-lobby',
@@ -30,6 +37,7 @@ export class CreateLobby {
     readonly format: LobbyFormat = inject(ActivatedRoute).snapshot.data['format'];
     readonly copy = LOBBY_FORMATS[this.format];
     readonly isTournament = this.format === 'TOURNAMENT';
+    readonly defaultTimes = DEFAULT_TIMES[this.format];
 
     readonly submitting = signal(false);
     readonly serverError = signal<string | null>(null);
@@ -78,6 +86,9 @@ export class CreateLobby {
         const raw = this.form.getRawValue();
         const payload: CreateLobbyRequest = {
             ...raw,
+            // The form holds local wall-clock times; the API stores exact UTC moments.
+            startTime: toUtcIso(raw.startTime),
+            endTime: toUtcIso(raw.endTime),
             format: this.format,
             // Tournament teams are entered by the organizer, so players don't apply (yet).
             allowToApply: this.isTournament ? false : raw.allowToApply,
