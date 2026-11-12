@@ -308,6 +308,43 @@ describe('POST /lobbies/:lobbyId/schedule (Generate Schedule)', () => {
             expect(poolOrder(res.body.schedule, poolA.id)).toBe('AAAAAABBBBBB');
         });
 
+        // Pool A → court 1, Pool B → court 2 (pools ordered by name).
+        it('ONE_POOL_PER_COURT with 2 courts -> each pool stays on its own court', async () => {
+            const { organizer, lobby, poolA, poolB } = await seedTwoPoolsOfFour();
+
+            const res = await request(app)
+                .post(`/lobbies/${lobby.id}/schedule`)
+                .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+                .send({ courts: 2, slotMinutes: 40, courtMode: 'ONE_POOL_PER_COURT' });
+
+            expect(res.status).toBe(201);
+            const matches: MatchBody[] = res.body.schedule;
+            expect(matches).toHaveLength(12);
+            for (const m of matches) {
+                expect(m.court).toBe(m.poolId === poolA.id ? 1 : 2);
+            }
+            expect(matches.filter((m) => m.poolId === poolB.id)).toHaveLength(6);
+        });
+
+        // 2 pools need exactly 2 courts; 1 or 3 is refused with both numbers.
+        it.each([1, 3])(
+            'ONE_POOL_PER_COURT with %i courts for 2 pools -> 409, nothing saved',
+            async (courts) => {
+                const { organizer, lobby } = await seedTwoPoolsOfFour();
+
+                const res = await request(app)
+                    .post(`/lobbies/${lobby.id}/schedule`)
+                    .set('Authorization', makeAuthHeader(organizer.id, Role.ORGANIZER))
+                    .send({ courts, slotMinutes: 40, courtMode: 'ONE_POOL_PER_COURT' });
+
+                expect(res.status).toBe(409);
+                expect(res.body.error.message).toBe(
+                    `One court per pool needs 2 courts, but ${courts} courts are available.`,
+                );
+                expect(await prisma.match.count({ where: { lobbyId: lobby.id } })).toBe(0);
+            },
+        );
+
         it('unknown courtMode -> 400', async () => {
             const { res } = await generate('FASTEST');
 

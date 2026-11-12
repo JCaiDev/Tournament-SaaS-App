@@ -225,6 +225,15 @@ export const generateScheduleService = async (
             409,
         );
 
+    if (
+        input.courtMode === 'ONE_POOL_PER_COURT' &&
+        pools.length !== input.courts
+    )
+        throw new AppError(
+            `One court per pool needs ${pools.length} courts, but ${input.courts} courts are available.`,
+            409,
+        );
+
     const allPairs = pools.flatMap((pool) => {
         const ids = pool.teams.map((team) => team.id);
         const pairs = roundRobinPairs(ids);
@@ -235,7 +244,15 @@ export const generateScheduleService = async (
     if (input.courtMode === 'TAKE_TURNS')
         allPairs.sort((a, b) => a.round - b.round);
 
-    const schedule = packMatches(allPairs, input.courts);
+    // One court per pool: pools are ordered by name, so Pool A → court 1,
+    // Pool B → court 2… The guard above already checked courts === pools.
+    const courtOfPool = new Map(pools.map((pool, index) => [pool.id, index + 1]));
+    const schedule = packMatches(allPairs, input.courts, {
+        courtFor:
+            input.courtMode === 'ONE_POOL_PER_COURT'
+                ? (match) => courtOfPool.get(match.poolId)!
+                : undefined,
+    });
     const start = input.startTime ?? lobby.startTime;
 
     const matches = schedule.map((match) => {
