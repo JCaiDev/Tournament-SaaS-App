@@ -26,6 +26,7 @@ type MatchBody = {
     teamBId: string;
     court: number;
     startTime: string; // JSON turns Dates into ISO strings
+    refTeamId: string | null; // null = no ref (refs off, or nobody was free)
 };
 
 // Creates a team row directly in the DB, so these tests don't depend on
@@ -347,6 +348,161 @@ describe('POST /lobbies/:lobbyId/schedule (Generate Schedule)', () => {
 
         it('unknown courtMode -> 400', async () => {
             const { res } = await generate('FASTEST');
+
+            expect(res.status).toBe(400);
+            expect(res.body.error.message).toBe('Invalid request body');
+        });
+    });
+
+    // Referees. The picking rules are unit-tested in assign-refs.unit.test.ts;
+    // these check the wiring: the flag is read, refs reach the database, and
+    // the court mode decides which pool a ref may come from.
+    describe('referees', () => {
+        // pools: { 'Pool A': 4 } -> Pool A with teams "Pool A 1" … "Pool A 4".
+        async function seedPools(pools: Record<string, number>) {
+            const organizer = await seedUser();
+            const lobby = await seedLobby(organizer.id, {
+                format: LobbyFormat.TOURNAMENT,
+            });
+            // team id -> pool id, to check where a ref comes from.
+            const poolOfTeam: Record<string, string> = {};
+            // pool name -> pool id.
+            const poolIds: Record<string, string> = {};
+            for (const [poolName, size] of Object.entries(pools)) {
+                const teamIds: string[] = [];
+                for (let i = 1; i <= size; i++) {
+                    const team = await createTeam(lobby.id, `${poolName} ${i}`);
+                    teamIds.push(team.id);
+                }
+                const pool = await createPool(lobby.id, poolName, teamIds);
+                poolIds[poolName] = pool.id;
+                for (const id of teamIds) poolOfTeam[id] = pool.id;
+            }
+            return { organizer, lobby, poolOfTeam, poolIds };
+        }
+
+        function generate(
+            lobbyId: string,
+            organizerId: string,
+            body: Record<string, unknown>,
+        ) {
+            return request(app)
+                .post(`/lobbies/${lobbyId}/schedule`)
+                .set('Authorization', makeAuthHeader(organizerId, Role.ORGANIZER))
+                .send({ slotMinutes: 40, ...body });
+        }
+
+        // Old clients don't send the field; they get no refs, like before.
+        it('no referees in the body -> every match has refTeamId null', async () => {
+            const { organizer, lobby } = await seedPools({ 'Pool A': 4, 'Pool B': 4 });
+
+            const res = await generate(lobby.id, organizer.id, { courts: 2 });
+
+            expect(res.status).toBe(201);
+            const matches: MatchBody[] = res.body.schedule;
+            expect(matches).toHaveLength(12);
+            expect(matches.every((m) => m.refTeamId === null)).toBe(true);
+        });
+
+        // 8 teams on 2 courts: 4 play and 4 sit out in every slot, so there is
+        // always someone free to ref.
+        it('referees: true -> every match gets a ref who is not playing, saved in the DB', async () => {
+            const { organizer, lobby } = await seedPools({ 'Pool A': 4, 'Pool B': 4 });
+
+            const res = await generate(lobby.id, organizer.id, {
+                courts: 2,
+                referees: true,
+            });
+
+            expect(res.status).toBe(201);
+            const matches: MatchBody[] = res.body.schedule;
+            expect(matches).toHaveLength(12);
+
+            // Per time slot: who plays, and who refs.
+            const playing = new Set<string>();
+            for (const m of matches) {
+                playing.add(`${m.teamAId} at ${m.startTime}`);
+                playing.add(`${m.teamBId} at ${m.startTime}`);
+            }
+            const reffing = new Set<string>();
+            for (const m of matches) {
+                expect(m.refTeamId).not.toBeNull();
+                const key = `${m.refTeamId} at ${m.startTime}`;
+                expect(playing.has(key)).toBe(false); // never refs while playing
+                expect(reffing.has(key)).toBe(false); // never refs 2 courts at once
+                reffing.add(key);
+            }
+
+            // The response is read back from the DB, but check the rows too.
+            const saved = await prisma.match.count({
+                where: { lobbyId: lobby.id, refTeamId: { not: null } },
+            });
+            expect(saved).toBe(12);
+        });
+
+        it('referees + ONE_POOL_PER_COURT -> every ref comes from the match pool', async () => {
+            const { organizer, lobby, poolOfTeam } = await seedPools({
+                'Pool A': 4,
+                'Pool B': 3,
+            });
+
+            const res = await generate(lobby.id, organizer.id, {
+                courts: 2,
+                referees: true,
+                courtMode: 'ONE_POOL_PER_COURT',
+            });
+
+            expect(res.status).toBe(201);
+            const matches: MatchBody[] = res.body.schedule;
+            expect(matches).toHaveLength(9); // 6 in Pool A + 3 in Pool B
+            for (const m of matches) {
+                expect(m.refTeamId).not.toBeNull();
+                expect(poolOfTeam[m.refTeamId!]).toBe(m.poolId);
+            }
+        });
+
+        // Pool A has 2 teams: without the pool rule, Pool B refs A's match.
+        it('referees without ONE_POOL_PER_COURT -> a team from another pool can ref', async () => {
+            const { organizer, lobby, poolOfTeam, poolIds } = await seedPools({
+                'Pool A': 2,
+                'Pool B': 3,
+            });
+
+            const res = await generate(lobby.id, organizer.id, {
+                courts: 1,
+                referees: true,
+            });
+
+            expect(res.status).toBe(201);
+            const matches: MatchBody[] = res.body.schedule;
+            const poolAMatch = matches.find((m) => m.poolId === poolIds['Pool A'])!;
+            expect(poolAMatch.refTeamId).not.toBeNull();
+            expect(poolOfTeam[poolAMatch.refTeamId!]).toBe(poolIds['Pool B']);
+        });
+
+        // 4 teams on 2 courts: all 4 play in every slot, nobody can ref.
+        // Still a 201: the schedule is complete, the organizer covers the gaps.
+        it('ref gap: nobody free -> still 201, refTeamId null', async () => {
+            const { organizer, lobby } = await seedPools({ 'Pool A': 4 });
+
+            const res = await generate(lobby.id, organizer.id, {
+                courts: 2,
+                referees: true,
+            });
+
+            expect(res.status).toBe(201);
+            const matches: MatchBody[] = res.body.schedule;
+            expect(matches).toHaveLength(6);
+            expect(matches.every((m) => m.refTeamId === null)).toBe(true);
+        });
+
+        it('referees is not a boolean -> 400', async () => {
+            const { organizer, lobby } = await seedPools({ 'Pool A': 3 });
+
+            const res = await generate(lobby.id, organizer.id, {
+                courts: 1,
+                referees: 'yes',
+            });
 
             expect(res.status).toBe(400);
             expect(res.body.error.message).toBe('Invalid request body');
