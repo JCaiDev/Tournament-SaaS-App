@@ -93,6 +93,7 @@ export const generateScheduleSchema = z.object({
     startTime: z.coerce.date().optional(),
     slotMinutes: z.int().min(20).max(240),
     courtMode: courtModeSchema,
+    referees: z.boolean().default(false),
 });
 
 export type GenerateScheduleInput = z.infer<typeof generateScheduleSchema>;
