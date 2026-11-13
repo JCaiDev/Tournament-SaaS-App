@@ -73,17 +73,29 @@ export interface Match {
   poolId: string;
   teamAId: string;
   teamBId: string;
-  refTeamId: string | null; // ref duty isn't assigned yet
+  // The team reffing this match. null = refs were off, or no team was free
+  // in that slot (a "ref gap": the organizer covers it).
+  refTeamId: string | null;
   court: number; // 1-based label
   startTime: string; // ISO
 }
 
+// How pools share the courts (the API's courtMode):
+// - TAKE_TURNS: every pool plays a round, then the next pool's round…
+// - WAVES: all of Pool A, then all of Pool B (the API default).
+// - ONE_POOL_PER_COURT: Pool A on court 1, Pool B on court 2… needs
+//   courts === pools, otherwise the API answers 409.
+export type CourtMode = 'TAKE_TURNS' | 'WAVES' | 'ONE_POOL_PER_COURT';
+
 // POST /lobbies/:lobbyId/schedule. startTime is optional: the API falls back
-// to the lobby's start time.
+// to the lobby's start time. courtMode defaults to WAVES and referees to
+// false on the API, so older clients keep their behaviour.
 export interface GenerateScheduleRequest {
   courts: number; // 1–500
   slotMinutes: number; // 20–240
   startTime?: string; // ISO
+  courtMode?: CourtMode;
+  referees?: boolean; // a team sitting out refs each match
 }
 
 // Both schedule endpoints: matches sorted by start time, then court.

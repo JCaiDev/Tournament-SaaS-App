@@ -2,13 +2,18 @@ import { Component, OnInit, computed, inject, input, signal } from '@angular/cor
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TeamService } from '../../../services/team.service';
-import { GenerateScheduleRequest, Match, Team } from '../../../models/team';
+import { CourtMode, GenerateScheduleRequest, Match, Team } from '../../../models/team';
 import { DatetimePicker } from '../../../shared/datetime-picker/datetime-picker';
 import {
+  countRefGaps,
   formatDuration,
   groupByTime,
   inferSlotMinutes,
+  looksOnePoolPerCourt,
+  maxRefCourts,
   minimumSlots,
+  onePoolPerCourtSlots,
+  refDutyRange,
   roundRobinCount,
   scheduleEnd,
   toLocalInput,
@@ -30,6 +35,8 @@ export interface SchedulePool {
 }
 
 type StaleReason = 'pools' | 'teams';
+// When there are fewer courts than pools, how the pools share them.
+export type PoolOrder = 'TAKE_TURNS' | 'WAVES';
 
 // Step 3 of the organizer's draft: pick courts, start time and slot length,
 // then POST /schedule. The API pairs every team in each pool (round robin),
@@ -71,6 +78,11 @@ export class TournamentSchedule implements OnInit {
   private readonly matchesAtSave = signal(0);
   // Slot length the shown schedule was generated with.
   private readonly slotUsed = signal(DEFAULT_SLOT);
+  // Whether the shown schedule was generated with refs / one court per pool.
+  // The API doesn't store these settings, so on reload they're read back
+  // from the matches (any refTeamId → refs were on).
+  private readonly refsUsed = signal(false);
+  private readonly onePoolPerCourtUsed = signal(false);
 
   readonly highlightTeamId = signal<string | null>(null);
 
@@ -89,8 +101,59 @@ export class TournamentSchedule implements OnInit {
     }),
   });
   // Form values as signals, so the estimate below updates while typing.
-  private readonly courts = signal(2);
+  readonly courts = signal(2);
   private readonly slotMinutes = signal(DEFAULT_SLOT);
+
+  // ---- Court sharing and refs (plain signals: they depend on each other) ----
+
+  // What the organizer ticked. Only takes effect while courts === pools.
+  readonly onePoolPerCourtChoice = signal(false);
+  // Only asked when there are fewer courts than pools.
+  readonly poolOrder = signal<PoolOrder>('TAKE_TURNS');
+  // On by default: most organizers have the sitting team ref. Sent
+  // explicitly; the API's own default is off (for older clients).
+  readonly referees = signal(true);
+
+  readonly poolCount = computed(() => this.pools().length);
+  readonly teamCount = computed(() => this.pools().reduce((sum, p) => sum + p.teams.length, 0));
+  readonly onePoolPerCourtAvailable = computed(
+    () => this.poolCount() > 1 && this.courts() === this.poolCount(),
+  );
+  readonly onePoolPerCourt = computed(
+    () => this.onePoolPerCourtChoice() && this.onePoolPerCourtAvailable(),
+  );
+  readonly showPoolOrder = computed(
+    () => !this.onePoolPerCourt() && this.poolCount() > 1 && this.courts() < this.poolCount(),
+  );
+  readonly courtMode = computed<CourtMode>(() => {
+    if (this.onePoolPerCourt()) return 'ONE_POOL_PER_COURT';
+    // With courts ≥ pools the two orders barely differ; take turns keeps
+    // every pool moving, so it's the quiet default.
+    return this.showPoolOrder() ? this.poolOrder() : 'TAKE_TURNS';
+  });
+
+  // Before generating: will some matches have nobody free to ref?
+  readonly refWarning = computed<{ text: string; useCourts: number | null } | null>(() => {
+    if (!this.referees() || this.blockers().length > 0) return null;
+    if (this.onePoolPerCourt()) {
+      const small = this.pools().filter((p) => p.teams.length < 3);
+      if (small.length === 0) return null;
+      const names = small.map((p) => p.name).join(', ');
+      return {
+        text: `${names} ${small.length === 1 ? 'has' : 'have'} only 2 teams, so nobody in the pool is free to ref. Organizers will ref those matches.`,
+        useCourts: null,
+      };
+    }
+    const max = maxRefCourts(this.teamCount());
+    if (this.courts() <= max) return null;
+    return {
+      text:
+        max === 0
+          ? `With ${this.teamCount()} teams, nobody is ever free to ref. Organizers will ref every match.`
+          : `With ${this.teamCount()} teams, at most ${max} ${max === 1 ? 'match' : 'matches'} at a time can have a team ref. Some matches may need an organizer to ref.`,
+      useCourts: max >= 1 ? max : null,
+    };
+  });
 
   // ---- Lookups ----
 
@@ -125,7 +188,7 @@ export class TournamentSchedule implements OnInit {
     const courts = this.courts();
     const slot = this.slotMinutes();
     if (matchCount === 0 || !(courts >= COURTS_MIN) || !(slot >= SLOT_MIN)) return null;
-    const slots = minimumSlots(sizes, courts);
+    const slots = this.onePoolPerCourt() ? onePoolPerCourtSlots(sizes) : minimumSlots(sizes, courts);
     return { matchCount, slots, duration: formatDuration(slots * slot) };
   });
 
@@ -161,7 +224,10 @@ export class TournamentSchedule implements OnInit {
     const end = scheduleEnd(matches, slot)!;
     const lobbyEnd = this.lobbyEnd() ? new Date(this.lobbyEnd()!) : null;
     const overrun = lobbyEnd ? Math.round((end.getTime() - lobbyEnd.getTime()) / 60_000) : 0;
+    const teamIds = [...new Set(matches.flatMap((m) => [m.teamAId, m.teamBId]))];
+    const duties = this.refsUsed() ? refDutyRange(matches, teamIds) : null;
     return {
+      refDuty: duties ? (duties.min === duties.max ? `${duties.min}` : `${duties.min}–${duties.max}`) : null,
       matchCount: matches.length,
       courtCount: Math.max(...matches.map((m) => m.court)),
       day: formatDay(start),
@@ -173,6 +239,20 @@ export class TournamentSchedule implements OnInit {
     };
   });
 
+  // After generating with refs on: matches nobody was free to ref.
+  readonly refGaps = computed<{ count: number; useCourts: number | null } | null>(() => {
+    if (!this.refsUsed()) return null;
+    const matches = this.liveMatches();
+    const count = countRefGaps(matches);
+    if (count === 0) return null;
+    // Fewer courts fixes it unless each pool is pinned to its court.
+    const teams = new Set(matches.flatMap((m) => [m.teamAId, m.teamBId])).size;
+    const max = maxRefCourts(teams);
+    const courtsNow = Math.max(...matches.map((m) => m.court));
+    const useCourts = !this.onePoolPerCourtUsed() && max >= 1 && max < courtsNow ? max : null;
+    return { count, useCourts };
+  });
+
   // Teams in the schedule, A–Z, for the "Highlight a team" menu.
   readonly scheduledTeams = computed(() => {
     const names = this.teamName();
@@ -182,19 +262,39 @@ export class TournamentSchedule implements OnInit {
       .sort((a, b) => a.name.localeCompare(b.name));
   });
 
-  // "Aces plays 3 matches: 9:00, 10:20, 11:40" for the highlighted team.
+  // "Aces plays 3 matches: 9:00, 10:20, 11:40 · refs 2: 9:40, 11:00" for the
+  // highlighted team (what a captain needs to know about their day).
   readonly highlightSummary = computed(() => {
     const id = this.highlightTeamId();
     if (!id) return null;
-    const times = this.liveMatches()
-      .filter((m) => m.teamAId === id || m.teamBId === id)
-      .map((m) => `${formatTime(m.startTime)} (Court ${m.court})`);
-    return { name: this.teamName().get(id) ?? '', count: times.length, times: times.join(' · ') };
+    const at = (m: Match) => `${formatTime(m.startTime)} (Court ${m.court})`;
+    const matches = this.liveMatches();
+    const plays = matches.filter((m) => m.teamAId === id || m.teamBId === id).map(at);
+    const refs = matches.filter((m) => m.refTeamId === id).map(at);
+    return {
+      name: this.teamName().get(id) ?? '',
+      count: plays.length,
+      times: plays.join(' · '),
+      refCount: refs.length,
+      refTimes: refs.join(' · '),
+    };
   });
 
-  readonly legend = computed(() =>
-    this.pools().map((pool, i) => ({ name: pool.name, colour: i % POOL_COLOURS })),
-  );
+  // Pool colours, plus each pool's first start and last finish once there's
+  // a schedule ("Pool A · 9:00 – 11:15").
+  readonly legend = computed(() => {
+    const matches = this.liveMatches();
+    const slot = this.slotUsed();
+    const poolOf = this.poolIndexOfTeam();
+    return this.pools().map((pool, i) => {
+      const own = matches.filter((m) => poolOf.get(m.teamAId) === i);
+      const span =
+        own.length > 0
+          ? `${formatTime(own.reduce((a, b) => (a.startTime < b.startTime ? a : b)).startTime)} – ${formatTime(scheduleEnd(own, slot)!)}`
+          : null;
+      return { name: pool.name, colour: i % POOL_COLOURS, span };
+    });
+  });
 
   ngOnInit(): void {
     this.form.controls.courts.setValue(Math.max(COURTS_MIN, this.pools().length || 2));
@@ -228,17 +328,40 @@ export class TournamentSchedule implements OnInit {
     this.form.controls.slotMinutes.setValue(minutes);
   }
 
+  setCourts(count: number): void {
+    this.form.controls.courts.setValue(clamp(count, COURTS_MIN, COURTS_MAX));
+  }
+
+  // "Use 3 courts" under the ref-gap warning: the organizer already chose,
+  // so regenerate straight away without the replace confirmation.
+  regenerateWithCourts(count: number): void {
+    this.setCourts(count);
+    void this.generate(true);
+  }
+
+  onToggle(setting: 'onePoolPerCourt' | 'referees', event: Event): void {
+    const on = (event.target as HTMLInputElement).checked;
+    if (setting === 'onePoolPerCourt') this.onePoolPerCourtChoice.set(on);
+    else this.referees.set(on);
+  }
+
+  // "One court per pool" needs one court per pool: set that many and tick it.
+  useOneCourtPerPool(): void {
+    this.setCourts(this.poolCount());
+    this.onePoolPerCourtChoice.set(true);
+  }
+
   onHighlight(event: Event): void {
     this.highlightTeamId.set((event.target as HTMLSelectElement).value || null);
   }
 
-  async generate(): Promise<void> {
+  async generate(skipConfirm = false): Promise<void> {
     if (this.generating() || this.blockers().length > 0) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    if (this.hasSchedule() && !confirm('Replace the current schedule with a new one?')) return;
+    if (!skipConfirm && this.hasSchedule() && !confirm('Replace the current schedule with a new one?')) return;
 
     this.generating.set(true);
     this.error.set(null);
@@ -253,7 +376,12 @@ export class TournamentSchedule implements OnInit {
     }
 
     const { courts, slotMinutes, startTime } = this.form.getRawValue();
-    const body: GenerateScheduleRequest = { courts: Number(courts), slotMinutes: Number(slotMinutes) };
+    const body: GenerateScheduleRequest = {
+      courts: Number(courts),
+      slotMinutes: Number(slotMinutes),
+      courtMode: this.courtMode(),
+      referees: this.referees(),
+    };
     if (startTime) body.startTime = new Date(startTime).toISOString(); // local time → UTC
     const savedCountAtSend = this.poolsSavedCount();
 
@@ -261,6 +389,8 @@ export class TournamentSchedule implements OnInit {
       next: (matches) => {
         this.generating.set(false);
         this.slotUsed.set(body.slotMinutes);
+        this.refsUsed.set(body.referees === true);
+        this.onePoolPerCourtUsed.set(body.courtMode === 'ONE_POOL_PER_COURT');
         this.highlightTeamId.set(null);
         // If pools saved again while we waited, the server may already have
         // deleted this schedule; recording the old count marks it stale.
@@ -295,6 +425,14 @@ export class TournamentSchedule implements OnInit {
     this.form.controls.courts.setValue(Math.max(...matches.map((m) => m.court)));
     const first = matches.reduce((a, b) => (a.startTime < b.startTime ? a : b));
     this.form.controls.startTime.setValue(toLocalInput(first.startTime));
+    // Not stored by the API: read back from the matches. A schedule where
+    // refs were on but nobody was ever free looks like "refs off" here.
+    const hadRefs = matches.some((m) => m.refTeamId !== null);
+    this.refsUsed.set(hadRefs);
+    this.referees.set(hadRefs);
+    const pinned = looksOnePoolPerCourt(matches);
+    this.onePoolPerCourtUsed.set(pinned);
+    this.onePoolPerCourtChoice.set(pinned);
   }
 
   private toCard(m: Match) {
@@ -304,6 +442,14 @@ export class TournamentSchedule implements OnInit {
     const teamA = names.get(m.teamAId) ?? 'Unknown team';
     const teamB = names.get(m.teamBId) ?? 'Unknown team';
     const pool = this.pools()[poolIndex]?.name ?? '';
+    // Ref line only when the schedule was made with refs; null = a gap.
+    const ref = this.refsUsed()
+      ? m.refTeamId
+        ? (names.get(m.refTeamId) ?? 'Unknown team')
+        : null
+      : undefined;
+    const involved = [m.teamAId, m.teamBId, m.refTeamId];
+    const refLabel = ref === undefined ? '' : ref ? `, ref ${ref}` : ', ref: organizer to assign';
     return {
       id: m.id,
       court: m.court,
@@ -311,10 +457,13 @@ export class TournamentSchedule implements OnInit {
       colour: poolIndex % POOL_COLOURS,
       teamA,
       teamB,
+      showRef: ref !== undefined,
+      ref,
       aIsHighlighted: highlight === m.teamAId,
       bIsHighlighted: highlight === m.teamBId,
-      dimmed: highlight !== null && highlight !== m.teamAId && highlight !== m.teamBId,
-      label: `Court ${m.court}, ${pool}: ${teamA} versus ${teamB}`,
+      refIsHighlighted: highlight !== null && highlight === m.refTeamId,
+      dimmed: highlight !== null && !involved.includes(highlight),
+      label: `Court ${m.court}, ${pool}: ${teamA} versus ${teamB}${refLabel}`,
     };
   }
 }

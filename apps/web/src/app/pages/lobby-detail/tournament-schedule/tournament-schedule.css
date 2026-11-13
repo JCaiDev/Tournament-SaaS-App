@@ -261,6 +261,176 @@
   color: var(--color-on-primary);
 }
 
+/* ---- Options: one court per pool, pool order, refs ---- */
+
+.options {
+  display: grid;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.option {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.75rem; /* touch target */
+  cursor: pointer;
+}
+
+.option-off .switch-row {
+  cursor: not-allowed;
+}
+
+.option-title {
+  font-weight: 600;
+  color: var(--color-foreground);
+  padding: 0;
+}
+
+.option-off .option-title {
+  color: var(--color-muted);
+}
+
+.option-hint {
+  margin: 0.1rem 0 0;
+  padding-left: calc(2.6rem + 0.65rem); /* line up under the title */
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  max-width: 62ch;
+}
+
+/* A native checkbox, drawn as a switch. The input stays focusable and is
+   what screen readers announce (role="switch"). */
+.switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.switch-track {
+  flex: none;
+  position: relative;
+  width: 2.6rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--color-border);
+  transition: background 150ms ease;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.1875rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 27, 42, 0.25);
+  transition: transform 150ms ease;
+}
+
+.switch-input:checked + .switch-track {
+  background: var(--color-primary);
+}
+
+.switch-input:checked + .switch-track .switch-thumb {
+  transform: translateX(1.1rem);
+}
+
+.switch-input:focus-visible + .switch-track {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+.switch-input:disabled + .switch-track {
+  opacity: 0.5;
+}
+
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  color: var(--color-primary-dark);
+}
+
+/* "How should the pools share?" two choice cards */
+.order .option-title {
+  display: block;
+  margin-bottom: var(--space-sm);
+}
+
+.order-choices {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-sm);
+}
+
+@media (min-width: 641px) {
+  .order-choices {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.order-card {
+  position: relative;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.7rem 0.85rem 0.75rem 2.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.order-card:hover {
+  border-color: var(--color-primary);
+}
+
+.order-card.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+  background: rgba(35, 87, 137, 0.04);
+}
+
+.order-card input {
+  position: absolute;
+  left: 0.85rem;
+  top: 0.85rem;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+.order-name {
+  font-weight: 600;
+}
+
+.order-desc {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
 /* ---- Actions ---- */
 
 .actions {
@@ -330,6 +500,27 @@
   color: #991b1b;
 }
 
+.callout .link-btn {
+  color: inherit;
+  margin-left: 0.25rem;
+}
+
+.callout-actions {
+  margin-top: 0.5rem;
+}
+
+.callout-btn {
+  min-height: 2.5rem;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.875rem;
+  background: var(--color-surface);
+}
+
+.callout-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .callout-info {
   background: rgba(35, 87, 137, 0.07);
   border-color: rgba(35, 87, 137, 0.2);
@@ -349,11 +540,19 @@
   margin: 0;
 }
 
+/* Tablets up: one row of tiles, sized to their content (5 or 6 of them). */
 @media (min-width: 641px) {
   .stats {
-    grid-template-columns: repeat(5, minmax(0, auto));
-    justify-content: start;
+    display: flex;
+    flex-wrap: wrap;
   }
+}
+
+.stat-unit {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-muted);
 }
 
 .stat {
@@ -437,6 +636,11 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-muted);
+}
+
+.legend-span {
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .dot {
@@ -589,6 +793,50 @@
   box-shadow: 0 0 0 3px rgba(241, 211, 2, 0.35);
 }
 
+/* "Ref  Bears" under the teams; a gap gets a dashed amber line instead. */
+.ref {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.82rem;
+  min-width: 0;
+}
+
+.ref-label {
+  flex: none;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.ref-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 4px;
+}
+
+.ref-name.highlighted {
+  background: rgba(241, 211, 2, 0.35);
+  box-shadow: 0 0 0 3px rgba(241, 211, 2, 0.35);
+}
+
+.ref-gap {
+  border-top-style: dashed;
+  border-top-color: #f5d76e;
+}
+
+.ref-gap .ref-name {
+  color: #6b4e00;
+  font-style: italic;
+}
+
 .vs {
   font-size: 0.72rem;
   font-weight: 600;
@@ -671,7 +919,10 @@
   .skeleton-row {
     animation: none;
   }
-  .match {
+  .match,
+  .switch-track,
+  .switch-thumb,
+  .order-card {
     transition: none;
   }
 }
