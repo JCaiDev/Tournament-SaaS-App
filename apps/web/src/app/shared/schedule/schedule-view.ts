@@ -101,6 +101,18 @@ export function groupByTime(matches: Match[]): TimeSlot[] {
 }
 
 /**
+ * One cell per court (index 0 = Court 1) for a court × time grid: the match on
+ * that court, or null when the court is open in this slot.
+ */
+export function courtCells<T extends { court: number }>(matches: T[], courtCount: number): (T | null)[] {
+  const cells: (T | null)[] = Array.from({ length: courtCount }, () => null);
+  for (const match of matches) {
+    if (match.court >= 1 && match.court <= courtCount) cells[match.court - 1] = match;
+  }
+  return cells;
+}
+
+/**
  * Reads the slot length back from a saved schedule: the smallest gap between
  * two different start times. null when every match starts at the same time.
  */
