@@ -1,9 +1,14 @@
 import { Match } from '../../models/team';
 import {
+  countRefGaps,
   formatDuration,
   groupByTime,
   inferSlotMinutes,
+  looksOnePoolPerCourt,
+  maxRefCourts,
   minimumSlots,
+  onePoolPerCourtSlots,
+  refDutyRange,
   roundRobinCount,
   scheduleEnd,
 } from './schedule-view';
@@ -76,5 +81,58 @@ describe('schedule-view', () => {
     expect(formatDuration(45)).toBe('45m');
     expect(formatDuration(120)).toBe('2h');
     expect(formatDuration(160)).toBe('2h 40m');
+  });
+
+  it('onePoolPerCourtSlots: as long as the biggest pool', () => {
+    // Pool of 4 = 6 matches, pool of 3 = 3 matches, one at a time per court.
+    expect(onePoolPerCourtSlots([4, 3])).toBe(6);
+    expect(onePoolPerCourtSlots([])).toBe(0);
+  });
+
+  it('maxRefCourts: every reffed match uses 3 teams', () => {
+    expect(maxRefCourts(8)).toBe(2);
+    expect(maxRefCourts(9)).toBe(3);
+    expect(maxRefCourts(40)).toBe(13);
+    expect(maxRefCourts(2)).toBe(0);
+  });
+
+  describe('refs', () => {
+    const withRef = (id: string, ref: string | null, teamA = `${id}-a`, teamB = `${id}-b`): Match => ({
+      ...match(id, '2026-11-15T09:00:00Z', 1),
+      teamAId: teamA,
+      teamBId: teamB,
+      refTeamId: ref,
+    });
+
+    it('countRefGaps: matches with no ref', () => {
+      expect(countRefGaps([withRef('a', 'x'), withRef('b', null), withRef('c', null)])).toBe(2);
+    });
+
+    it('refDutyRange: counts teams with no duty as 0', () => {
+      const matches = [withRef('a', 'T1', 'T2', 'T3'), withRef('b', 'T1', 'T2', 'T3'), withRef('c', 'T2', 'T1', 'T3')];
+      expect(refDutyRange(matches, ['T1', 'T2', 'T3'])).toEqual({ min: 0, max: 2 });
+    });
+
+    it('refDutyRange: null when nobody refs', () => {
+      expect(refDutyRange([withRef('a', null)], ['a-a', 'a-b'])).toBeNull();
+    });
+  });
+
+  describe('looksOnePoolPerCourt', () => {
+    const at = (id: string, poolId: string, court: number): Match => ({ ...match(id, '2026-11-15T09:00:00Z', court), poolId });
+
+    it('true when each pool keeps its own court', () => {
+      expect(looksOnePoolPerCourt([at('a', 'P1', 1), at('b', 'P1', 1), at('c', 'P2', 2)])).toBeTrue();
+    });
+
+    it('false when a pool moves courts or two pools share one', () => {
+      expect(looksOnePoolPerCourt([at('a', 'P1', 1), at('b', 'P1', 2), at('c', 'P2', 3)])).toBeFalse();
+      expect(looksOnePoolPerCourt([at('a', 'P1', 1), at('c', 'P2', 1)])).toBeFalse();
+    });
+
+    it('false for a single pool or no matches (nothing to tell apart)', () => {
+      expect(looksOnePoolPerCourt([at('a', 'P1', 1)])).toBeFalse();
+      expect(looksOnePoolPerCourt([])).toBeFalse();
+    });
   });
 });

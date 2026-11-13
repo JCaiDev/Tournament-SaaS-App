@@ -49,6 +49,76 @@
     </div>
   </div>
 
+  <!-- How pools share courts, and who refs -->
+  <div class="options">
+    @if (poolCount() > 1) {
+      <div class="option" [class.option-off]="!onePoolPerCourtAvailable()">
+        <label class="switch-row">
+          <input type="checkbox" role="switch" class="switch-input"
+            [checked]="onePoolPerCourt()" [disabled]="!onePoolPerCourtAvailable()"
+            (change)="onToggle('onePoolPerCourt', $event)" aria-describedby="opt-court-hint" />
+          <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+          <span class="option-title">One court per pool</span>
+        </label>
+        <p id="opt-court-hint" class="option-hint">
+          @if (onePoolPerCourtAvailable()) {
+            Each pool stays on its own court all day: {{ pools()[0].name }} on Court 1, {{ pools()[1].name }} on Court 2…
+          } @else {
+            Needs exactly {{ poolCount() }} courts, one per pool.
+            <button type="button" class="link-btn" (click)="useOneCourtPerPool()">Use {{ poolCount() }} courts</button>
+          }
+        </p>
+      </div>
+    }
+
+    @if (showPoolOrder()) {
+      <fieldset class="option order">
+        <legend class="option-title">{{ courts() }} {{ courts() === 1 ? 'court' : 'courts' }} for {{ poolCount() }} pools: how should they share?</legend>
+        <div class="order-choices">
+          <label class="order-card" [class.active]="poolOrder() === 'TAKE_TURNS'">
+            <input type="radio" name="pool-order" value="TAKE_TURNS"
+              [checked]="poolOrder() === 'TAKE_TURNS'" (change)="poolOrder.set('TAKE_TURNS')" />
+            <span class="order-name">Pools take turns</span>
+            <span class="order-desc">Every pool plays a round, then the next pool. Everyone finishes around the same time, with even breaks before playoffs.</span>
+          </label>
+          <label class="order-card" [class.active]="poolOrder() === 'WAVES'">
+            <input type="radio" name="pool-order" value="WAVES"
+              [checked]="poolOrder() === 'WAVES'" (change)="poolOrder.set('WAVES')" />
+            <span class="order-name">One pool after another</span>
+            <span class="order-desc">{{ pools()[0].name }} plays all its matches, then {{ pools()[1].name }}. Fewer people in the gym at once; early pools get a long break.</span>
+          </label>
+        </div>
+      </fieldset>
+    }
+
+    <div class="option">
+      <label class="switch-row">
+        <input type="checkbox" role="switch" class="switch-input"
+          [checked]="referees()" (change)="onToggle('referees', $event)" aria-describedby="opt-ref-hint" />
+        <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+        <span class="option-title">Teams sitting out ref</span>
+      </label>
+      <p id="opt-ref-hint" class="option-hint">
+        @if (onePoolPerCourt()) {
+          A team from the same pool that isn’t playing refs each match. Duties are shared out evenly.
+        } @else {
+          A team that isn’t playing refs each match, from any pool. Duties are shared out evenly.
+        }
+      </p>
+    </div>
+  </div>
+
+  @if (refWarning(); as w) {
+    <div class="callout callout-warn" role="status">
+      {{ w.text }}
+      @if (w.useCourts !== null) {
+        <button type="button" class="link-btn" (click)="setCourts(w.useCourts)">
+          Use {{ w.useCourts }} {{ w.useCourts === 1 ? 'court' : 'courts' }}
+        </button>
+      }
+    </div>
+  }
+
   @if (blockers().length > 0) {
     <div class="callout callout-warn" role="status">
       <strong>Before you can generate:</strong>
@@ -104,11 +174,31 @@
       <div class="stat stat-wide"><dt>{{ s.day }}</dt><dd>{{ s.start }} – {{ s.end }}</dd></div>
       <div class="stat"><dt>Length</dt><dd>{{ s.length }}</dd></div>
       <div class="stat"><dt>Slot</dt><dd>{{ s.slot }} min</dd></div>
+      @if (s.refDuty) {
+        <div class="stat"><dt>Ref duties</dt><dd>{{ s.refDuty }} <span class="stat-unit">per team</span></dd></div>
+      }
     </dl>
 
     @if (s.overrun; as o) {
       <div class="callout callout-warn" role="status">
         Runs {{ o.by }} past the lobby’s end time ({{ o.lobbyEnd }}). Add a court, shorten the slots, or start earlier.
+      </div>
+    }
+
+    @if (refGaps(); as g) {
+      <div class="callout callout-warn" role="status">
+        <strong>{{ g.count }} {{ g.count === 1 ? 'match has' : 'matches have' }} no team free to ref.</strong>
+        @if (g.useCourts !== null) {
+          Use at most {{ g.useCourts }} {{ g.useCourts === 1 ? 'court' : 'courts' }}, or organizers will ref the gaps.
+          <div class="callout-actions">
+            <button type="button" class="btn btn-ghost callout-btn" (click)="regenerateWithCourts(g.useCourts)"
+              [disabled]="generating()">
+              Use {{ g.useCourts }} {{ g.useCourts === 1 ? 'court' : 'courts' }} and regenerate
+            </button>
+          </div>
+        } @else {
+          Organizers will ref those matches. They’re marked <em>Organizer to assign</em> below.
+        }
       </div>
     }
 
@@ -124,7 +214,12 @@
       </label>
       <ul class="legend" aria-label="Pool colours">
         @for (item of legend(); track item.name) {
-          <li class="legend-item pool-c{{ item.colour }}"><span class="dot"></span>{{ item.name }}</li>
+          <li class="legend-item pool-c{{ item.colour }}">
+            <span class="dot"></span>{{ item.name }}
+            @if (item.span) {
+              <span class="legend-span">{{ item.span }}</span>
+            }
+          </li>
         }
       </ul>
     </div>
@@ -132,6 +227,9 @@
     @if (highlightSummary(); as h) {
       <p class="highlight-summary" role="status">
         <strong>{{ h.name }}</strong> plays {{ h.count }} {{ h.count === 1 ? 'match' : 'matches' }}: {{ h.times }}
+        @if (h.refCount > 0) {
+          <br />Refs {{ h.refCount }} {{ h.refCount === 1 ? 'match' : 'matches' }}: {{ h.refTimes }}
+        }
       </p>
     }
 
@@ -154,6 +252,16 @@
                   <span class="vs" aria-hidden="true">vs</span>
                   <span class="team" [class.highlighted]="m.bIsHighlighted" [title]="m.teamB">{{ m.teamB }}</span>
                 </div>
+                @if (m.showRef) {
+                  <div class="ref" [class.ref-gap]="!m.ref">
+                    <span class="ref-label">Ref</span>
+                    @if (m.ref) {
+                      <span class="ref-name" [class.highlighted]="m.refIsHighlighted" [title]="m.ref">{{ m.ref }}</span>
+                    } @else {
+                      <span class="ref-name">Organizer to assign</span>
+                    }
+                  </div>
+                }
               </li>
             }
           </ul>

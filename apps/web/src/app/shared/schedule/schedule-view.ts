@@ -26,6 +26,63 @@ export function minimumSlots(poolSizes: number[], courts: number): number {
   return Math.max(byCourts, byPools);
 }
 
+/**
+ * "One court per pool": each pool plays one match at a time on its own
+ * court, so the day is as long as the biggest pool's round robin.
+ */
+export function onePoolPerCourtSlots(poolSizes: number[]): number {
+  return Math.max(0, ...poolSizes.map(roundRobinCount));
+}
+
+/**
+ * Most courts that can all have a ref at once. Every reffed match uses 3
+ * teams (2 playing + 1 reffing), so n teams cover floor(n / 3) courts.
+ * With at most that many courts, no match is ever left without a ref.
+ */
+export function maxRefCourts(teamCount: number): number {
+  return Math.floor(teamCount / 3);
+}
+
+/** Matches with no ref: the organizer covers these ("ref gaps"). */
+export function countRefGaps(matches: Match[]): number {
+  return matches.filter((m) => m.refTeamId === null).length;
+}
+
+/**
+ * Fewest and most ref duties across the given teams (teams with none count
+ * as 0). null when no match has a ref.
+ */
+export function refDutyRange(matches: Match[], teamIds: string[]): { min: number; max: number } | null {
+  if (!matches.some((m) => m.refTeamId !== null)) return null;
+  const counts = new Map(teamIds.map((id) => [id, 0]));
+  for (const m of matches) {
+    if (m.refTeamId !== null) counts.set(m.refTeamId, (counts.get(m.refTeamId) ?? 0) + 1);
+  }
+  const values = [...counts.values()];
+  return { min: Math.min(...values), max: Math.max(...values) };
+}
+
+/**
+ * True when the saved schedule looks like "one court per pool": every pool
+ * stays on a single court, and no two pools share one. Used to put the
+ * setting back in the form when the page reopens (the API doesn't store it).
+ */
+export function looksOnePoolPerCourt(matches: Match[]): boolean {
+  if (matches.length === 0) return false;
+  const courtsOfPool = new Map<string, Set<number>>();
+  for (const m of matches) {
+    courtsOfPool.set(m.poolId, (courtsOfPool.get(m.poolId) ?? new Set()).add(m.court));
+  }
+  const used = new Set<number>();
+  for (const courts of courtsOfPool.values()) {
+    if (courts.size !== 1) return false;
+    const [court] = courts;
+    if (used.has(court)) return false;
+    used.add(court);
+  }
+  return courtsOfPool.size > 1;
+}
+
 export interface TimeSlot {
   startTime: string; // ISO, shared by every match in the slot
   matches: Match[]; // sorted by court
