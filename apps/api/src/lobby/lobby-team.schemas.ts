@@ -84,10 +84,16 @@ export const setPoolsSchema = z.object({
         ),
 });
 
+export const courtModeSchema = z
+    .enum(['ONE_POOL_PER_COURT', 'TAKE_TURNS', 'WAVES'])
+    .default('WAVES');
+
 export const generateScheduleSchema = z.object({
     courts: z.int().max(500).min(1),
     startTime: z.coerce.date().optional(),
     slotMinutes: z.int().min(20).max(240),
+    courtMode: courtModeSchema,
+    referees: z.boolean().default(false),
 });
 
 export type GenerateScheduleInput = z.infer<typeof generateScheduleSchema>;

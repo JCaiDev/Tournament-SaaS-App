@@ -101,6 +101,41 @@ describe('packMatches', () => {
         expect(() => packMatches(pairs, 0)).toThrow();
     });
 
+    // courtFor pins each match to a court. Here: pool letter → court
+    // (A → 1, B → 2), the way one-court-per-pool mode calls it.
+    describe('courtFor option', () => {
+        const pairs = [
+            ...roundRobinPairs(['A1', 'A2', 'A3', 'A4']).map((p) => ({ ...p, pool: 'A' })),
+            ...roundRobinPairs(['B1', 'B2', 'B3', 'B4']).map((p) => ({ ...p, pool: 'B' })),
+        ];
+        const courtFor = (match: { pool: string }) => (match.pool === 'A' ? 1 : 2);
+
+        it('every match lands on its pinned court', () => {
+            const schedule = packMatches(pairs, 2, { courtFor });
+
+            expect(schedule).toHaveLength(pairs.length);
+            for (const m of schedule) expect(m.court).toBe(courtFor(m));
+            expectNoClashes(schedule);
+        });
+
+        // The list is all of Pool A, then all of Pool B. Without the pin, Pool A
+        // would grab both courts first. With it, both pools play from slot 0.
+        it('both pools start in the first slot, one match each', () => {
+            const schedule = packMatches(pairs, 2, { courtFor });
+            const firstSlot = schedule.filter((m) => m.slot === 0);
+
+            expect(firstSlot.map((m) => m.court).sort()).toEqual([1, 2]);
+        });
+
+        // A court number outside 1..numberOfCourts can never be filled, so the
+        // loop would run forever. It must throw instead.
+        it('a court that does not exist -> throws instead of looping forever', () => {
+            expect(() => packMatches(pairs, 2, { courtFor: () => 3 })).toThrow(
+                'Court 3 does not exist',
+            );
+        });
+    });
+
     // 5 teams can play at most 2 matches at once, so 10 matches need at least
     // 5 slots. The old nested-loop order took 7 (team E squeezed to the end);
     // circle order reaches the minimum.

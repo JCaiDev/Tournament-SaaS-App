@@ -12,6 +12,7 @@ import { AppError } from '../errors/AppErrors';
 import { Prisma, LobbyFormat } from '@prisma/client';
 import { roundRobinPairs } from '../schedule/round-robin';
 import { packMatches } from '../schedule/pack-matches';
+import { assignRefs } from '../schedule/assign-refs';
 
 const MS_PER_MINUTE = 60_000;
 
@@ -225,6 +226,15 @@ export const generateScheduleService = async (
             409,
         );
 
+    if (
+        input.courtMode === 'ONE_POOL_PER_COURT' &&
+        pools.length !== input.courts
+    )
+        throw new AppError(
+            `One court per pool needs ${pools.length} courts, but ${input.courts} courts are available.`,
+            409,
+        );
+
     const allPairs = pools.flatMap((pool) => {
         const ids = pool.teams.map((team) => team.id);
         const pairs = roundRobinPairs(ids);
@@ -232,11 +242,39 @@ export const generateScheduleService = async (
         return tagged;
     });
 
-    const schedule = packMatches(allPairs, input.courts);
+    const teams = pools.flatMap((pool) => {
+        const poolTeams = pool.teams.map((team) => ({
+            id: team.id,
+            poolId: pool.id,
+        }));
+        return poolTeams;
+    });
+
+    if (input.courtMode === 'TAKE_TURNS')
+        allPairs.sort((a, b) => a.round - b.round);
+
+    // One court per pool: pools are ordered by name, so Pool A → court 1,
+    // Pool B → court 2… The guard above already checked courts === pools.
+    const courtOfPool = new Map(
+        pools.map((pool, index) => [pool.id, index + 1]),
+    );
+    const schedule = packMatches(allPairs, input.courts, {
+        courtFor:
+            input.courtMode === 'ONE_POOL_PER_COURT'
+                ? (match) => courtOfPool.get(match.poolId)!
+                : undefined,
+    });
+
+    const withRefs = input.referees
+        ? assignRefs(schedule, teams, {
+              samePoolOnly: input.courtMode === 'ONE_POOL_PER_COURT',
+          })
+        : schedule;
+
     const start = input.startTime ?? lobby.startTime;
 
-    const matches = schedule.map((match) => {
-        const { slot, ...rest } = match;
+    const matches = withRefs.map((match) => {
+        const { slot, round, ...rest } = match;
         const startTime = new Date(
             start.getTime() + slot * input.slotMinutes * MS_PER_MINUTE,
         );
