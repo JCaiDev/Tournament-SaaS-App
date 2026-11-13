@@ -1,6 +1,7 @@
 import { Match } from '../../models/team';
 import {
   countRefGaps,
+  courtCells,
   formatDuration,
   groupByTime,
   inferSlotMinutes,
@@ -58,6 +59,11 @@ describe('schedule-view', () => {
       match('a', '2026-11-15T09:00:00Z', 1), // same instant, different spelling
     ]);
     expect(slots.map((s) => s.matches.map((m) => m.id))).toEqual([['a', 'b'], ['c']]);
+  });
+
+  it('courtCells: one cell per court, null where the court is open', () => {
+    const cells = courtCells([match('b', '2026-11-15T09:00:00Z', 3), match('a', '2026-11-15T09:00:00Z', 1)], 4);
+    expect(cells.map((c) => c?.id ?? null)).toEqual(['a', null, 'b', null]);
   });
 
   it('inferSlotMinutes: the smallest gap between start times', () => {

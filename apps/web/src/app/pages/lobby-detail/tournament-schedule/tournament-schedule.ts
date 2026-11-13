@@ -7,6 +7,7 @@ import { DatetimePicker } from '../../../shared/datetime-picker/datetime-picker'
 import {
   countRefGaps,
   formatDuration,
+  courtCells,
   groupByTime,
   inferSlotMinutes,
   looksOnePoolPerCourt,
@@ -25,7 +26,7 @@ const COURTS_MAX = 500;
 const SLOT_MIN = 20;
 const SLOT_MAX = 240;
 const DEFAULT_SLOT = 45;
-const SLOT_PRESETS = [30, 45, 60, 90];
+const SLOT_PRESETS = [25, 35, 45, 55];
 // Pool colours cycle after this many (see .pool-c0 … .pool-c7 in the CSS).
 const POOL_COLOURS = 8;
 
@@ -103,6 +104,8 @@ export class TournamentSchedule implements OnInit {
   // Form values as signals, so the estimate below updates while typing.
   readonly courts = signal(2);
   private readonly slotMinutes = signal(DEFAULT_SLOT);
+  // The "First match" field as a signal, so the hint below it can react.
+  private readonly startValue = signal('');
 
   // ---- Court sharing and refs (plain signals: they depend on each other) ----
 
@@ -205,16 +208,44 @@ export class TournamentSchedule implements OnInit {
   });
 
   private readonly liveMatches = computed(() => (this.staleReason() ? [] : this.matches()));
+
+  // The saved schedule starts at a different time than the form shows (the
+  // organizer chose a later first match last time): offer it back in one click.
+  readonly savedStartHint = computed(() => {
+    const matches = this.liveMatches();
+    if (matches.length === 0) return null;
+    const first = matches.reduce((a, b) => (a.startTime < b.startTime ? a : b)).startTime;
+    const value = toLocalInput(first);
+    const current = this.startValue();
+    if (value === current) return null;
+    // Same day as the form: the time is enough. Another day: say which.
+    const sameDay = current.slice(0, 10) === value.slice(0, 10);
+    const label = sameDay ? formatTime(first) : `${formatDay(new Date(first))}, ${formatTime(first)}`;
+    return { value, label };
+  });
+
+  useSavedStart(): void {
+    const hint = this.savedStartHint();
+    if (hint) this.form.controls.startTime.setValue(hint.value);
+  }
   readonly hasSchedule = computed(() => this.liveMatches().length > 0);
 
-  readonly slots = computed(() =>
-    groupByTime(this.liveMatches()).map((slot, i) => ({
+  // Court × time grid: one column per court, one row per start time.
+  readonly courtNumbers = computed(() => {
+    const matches = this.liveMatches();
+    const count = matches.length ? Math.max(...matches.map((m) => m.court)) : 0;
+    return Array.from({ length: count }, (_, i) => i + 1);
+  });
+
+  readonly slots = computed(() => {
+    const courtCount = this.courtNumbers().length;
+    return groupByTime(this.liveMatches()).map((slot, i) => ({
       key: slot.startTime,
       round: i + 1,
       time: formatTime(slot.startTime),
-      matches: slot.matches.map((m) => this.toCard(m)),
-    })),
-  );
+      cells: courtCells(slot.matches, courtCount).map((m) => (m ? this.toCard(m) : null)),
+    }));
+  });
 
   readonly summary = computed(() => {
     const matches = this.liveMatches();
@@ -301,6 +332,8 @@ export class TournamentSchedule implements OnInit {
     this.form.controls.startTime.setValue(this.lobbyStart() ? toLocalInput(this.lobbyStart()!) : '');
     this.form.controls.courts.valueChanges.subscribe((v) => this.courts.set(Number(v)));
     this.form.controls.slotMinutes.valueChanges.subscribe((v) => this.slotMinutes.set(Number(v)));
+    this.form.controls.startTime.valueChanges.subscribe((v) => this.startValue.set(v));
+    this.startValue.set(this.form.controls.startTime.value);
     this.courts.set(this.form.controls.courts.value);
     this.load();
   }
@@ -423,8 +456,8 @@ export class TournamentSchedule implements OnInit {
       this.form.controls.slotMinutes.setValue(slot);
     }
     this.form.controls.courts.setValue(Math.max(...matches.map((m) => m.court)));
-    const first = matches.reduce((a, b) => (a.startTime < b.startTime ? a : b));
-    this.form.controls.startTime.setValue(toLocalInput(first.startTime));
+    // "First match" is not prefilled: it always opens on the tournament's
+    // start time. savedStartHint offers the saved schedule's time instead.
     // Not stored by the API: read back from the matches. A schedule where
     // refs were on but nobody was ever free looks like "refs off" here.
     const hadRefs = matches.some((m) => m.refTeamId !== null);

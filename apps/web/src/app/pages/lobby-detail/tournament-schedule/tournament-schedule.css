@@ -59,6 +59,7 @@
 /* ---- Settings card ---- */
 
 .settings {
+  --control-h: 2.8125rem;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -72,30 +73,26 @@
   gap: var(--space-md);
 }
 
+/* Tablets: courts and slot length share a row, the first match gets its own. */
 @media (min-width: 641px) {
   .fields {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
   }
   .field-start {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .fields > .field:last-child {
     grid-column: 1 / -1;
+    grid-row: 2;
   }
 }
 
+/* Desktop: all three in one row, in reading order. */
 @media (min-width: 1024px) {
   .fields {
-    grid-template-columns: auto minmax(0, 1.3fr) minmax(0, 1fr);
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
   }
   .field-start {
     grid-column: auto;
     grid-row: auto;
-  }
-  .fields > .field:last-child {
-    grid-column: auto;
   }
 }
 
@@ -106,7 +103,12 @@
   min-width: 0;
 }
 
-.field-label {
+/* .field .field-label: outranks the global `.field label` rule, so the
+   <label> and <span> labels look and sit the same. */
+.field .field-label {
+  display: block;
+  margin: 0;
+  line-height: 1.2;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -126,13 +128,15 @@
 
 /* Courts: − [ 4 ] + */
 .stepper {
-  display: inline-flex;
+  display: flex;
   align-items: stretch;
+  box-sizing: border-box;
+  height: var(--control-h);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--color-surface);
-  width: max-content;
+  width: 100%;
 }
 
 .stepper:focus-within {
@@ -140,6 +144,8 @@
 }
 
 .stepper input {
+  flex: 1;
+  min-width: 0;
   width: 4rem;
   border: 0;
   text-align: center;
@@ -165,8 +171,8 @@
 }
 
 .stepper-btn {
+  flex: none;
   width: 2.75rem;
-  min-height: 2.75rem;
   border: 0;
   background: var(--color-background);
   color: var(--color-primary);
@@ -188,12 +194,14 @@
 
 /* Slot length: [ 45 ] min  + preset chips */
 .slot-input {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  box-sizing: border-box;
+  height: var(--control-h);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
-  width: max-content;
+  width: 100%;
   padding-right: 0.75rem;
 }
 
@@ -203,8 +211,10 @@
 }
 
 .slot-input input {
+  flex: 1;
+  min-width: 0;
   width: 4.5rem;
-  min-height: 2.75rem;
+  align-self: stretch;
   border: 0;
   padding: 0 0.25rem 0 0.75rem;
   font: inherit;
@@ -230,10 +240,19 @@
   border-color: var(--color-destructive);
 }
 
+/* Phones: the four chips spread edge to edge under the input. */
 .presets {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 0.35rem;
+}
+
+/* Tablets and up: four equal chips that fill the column, so their edges
+   line up with the input above. */
+@media (min-width: 641px) {
+  .presets > .preset {
+    flex: 1;
+  }
 }
 
 .preset {
@@ -658,76 +677,117 @@
   font-size: 0.875rem;
 }
 
-/* ---- Timeline: one row per time slot ---- */
+/* ---- Court × time grid: one column per court, one row per start time ---- */
 
-.timeline {
-  list-style: none;
-  margin: 0;
+/* The table scrolls sideways in here, so the page itself never does. */
+.grid-scroll {
+  --time-col: 4.75rem;
+  --court-col: 10.5rem;
+  /* relative: keeps the absolutely positioned .sr-only labels inside this
+     box. Without it they escape the clipping and widen the whole page. */
+  position: relative;
+  overflow-x: auto;
+  padding-bottom: var(--space-sm);
+}
+
+.grid-scroll:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Fixed layout: the time column keeps its width, courts share the rest
+   equally, and the table grows past the box once courts hit their minimum. */
+.court-grid {
+  table-layout: fixed;
+  width: max(100%, calc(var(--time-col) + var(--courts) * var(--court-col)));
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.court-grid th,
+.court-grid td {
   padding: 0;
-  display: grid;
-  gap: var(--space-sm);
+  text-align: left;
+  font-weight: inherit;
 }
 
-.slot {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-sm);
-  padding: var(--space-sm) 0;
+.court-grid .corner {
+  width: var(--time-col);
 }
 
-.slot + .slot {
-  border-top: 1px solid var(--color-border);
+.court-grid .court-head {
+  padding: 0 0.3rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
 }
 
-/* Phones: the time sits above its matches like a sticky section header. */
-.slot-time {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-sm);
+.court-grid thead th {
+  border-bottom: 2px solid var(--color-border);
+}
+
+/* The time stays put on the left while the courts scroll under it. */
+.court-grid .corner,
+.court-grid .slot-time {
   position: sticky;
-  top: 0;
+  left: 0;
   z-index: 1;
-  background: var(--color-background);
-  padding: 0.25rem 0;
+  background: var(--color-surface);
+}
+
+.court-grid .slot-time {
+  padding: 0.85rem 0.5rem 0.5rem 0;
+  vertical-align: top;
+}
+
+.time,
+.round {
+  display: block;
 }
 
 .time {
   font-family: var(--font-heading);
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--color-primary);
   white-space: nowrap;
 }
 
 .round {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--color-muted);
 }
 
-/* Tablets and up: the time becomes a left column, like a printed schedule. */
-@media (min-width: 641px) {
-  .slot {
-    grid-template-columns: 6.5rem minmax(0, 1fr);
-    align-items: start;
-    gap: var(--space-md);
-  }
-  .slot-time {
-    position: static;
-    flex-direction: column;
-    gap: 0;
-    padding-top: 0.6rem;
-    background: transparent;
-  }
+.court-grid .cell {
+  padding: 0.3rem;
+  vertical-align: top;
+  height: 1px; /* lets the open-court box stretch to the row's height */
 }
 
-.slot-matches {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr));
-  gap: var(--space-sm);
+.court-grid tbody tr + tr > * {
+  border-top: 1px solid var(--color-border);
+}
+
+/* A court with nothing on it in this slot. */
+.open-court {
+  height: 100%;
+  min-height: 3.5rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  opacity: 0.6;
+}
+
+@media (min-width: 641px) {
+  .grid-scroll {
+    --time-col: 6rem;
+    --court-col: 12rem;
+  }
+  .time {
+    font-size: 1.2rem;
+  }
 }
 
 .match {
@@ -749,22 +809,6 @@
   opacity: 0.35;
 }
 
-.match-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  margin-bottom: 0.3rem;
-}
-
-.court {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-muted);
-}
-
 .pool-chip {
   font-size: 0.72rem;
   font-weight: 700;
@@ -773,6 +817,11 @@
   border-radius: 999px;
   padding: 0.05rem 0.5rem;
   white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.3rem;
 }
 
 .teams {

@@ -27,6 +27,12 @@
     <div class="field field-start">
       <span class="field-label">First match</span>
       <app-datetime-picker formControlName="startTime" defaultTime="09:00" />
+      @if (savedStartHint(); as h) {
+        <span class="field-hint">
+          The current schedule starts {{ h.label }}.
+          <button type="button" class="link-btn" (click)="useSavedStart()">Use that time</button>
+        </span>
+      }
     </div>
 
     <div class="field">
@@ -233,41 +239,56 @@
       </p>
     }
 
-    <ol class="timeline">
-      @for (slot of slots(); track slot.key) {
-        <li class="slot">
-          <div class="slot-time">
-            <span class="time">{{ slot.time }}</span>
-            <span class="round">Round {{ slot.round }}</span>
-          </div>
-          <ul class="slot-matches">
-            @for (m of slot.matches; track m.id) {
-              <li class="match pool-c{{ m.colour }}" [class.dimmed]="m.dimmed" [attr.aria-label]="m.label">
-                <div class="match-head">
-                  <span class="court">Court {{ m.court }}</span>
-                  <span class="pool-chip">{{ m.pool }}</span>
-                </div>
-                <div class="teams">
-                  <span class="team" [class.highlighted]="m.aIsHighlighted" [title]="m.teamA">{{ m.teamA }}</span>
-                  <span class="vs" aria-hidden="true">vs</span>
-                  <span class="team" [class.highlighted]="m.bIsHighlighted" [title]="m.teamB">{{ m.teamB }}</span>
-                </div>
-                @if (m.showRef) {
-                  <div class="ref" [class.ref-gap]="!m.ref">
-                    <span class="ref-label">Ref</span>
-                    @if (m.ref) {
-                      <span class="ref-name" [class.highlighted]="m.refIsHighlighted" [title]="m.ref">{{ m.ref }}</span>
-                    } @else {
-                      <span class="ref-name">Organizer to assign</span>
-                    }
-                  </div>
-                }
-              </li>
+    <!-- Court × time grid: one column per court, one row per start time.
+         Scrolls sideways inside its own box when the courts don't fit. -->
+    <div class="grid-scroll" role="region" aria-label="Schedule by court" tabindex="0">
+      <table class="court-grid" [style.--courts]="courtNumbers().length">
+        <thead>
+          <tr>
+            <th scope="col" class="corner"><span class="sr-only">Time</span></th>
+            @for (court of courtNumbers(); track court) {
+              <th scope="col" class="court-head">Court {{ court }}</th>
             }
-          </ul>
-        </li>
-      }
-    </ol>
+          </tr>
+        </thead>
+        <tbody>
+          @for (slot of slots(); track slot.key) {
+            <tr>
+              <th scope="row" class="slot-time">
+                <span class="time">{{ slot.time }}</span>
+                <span class="round">Round {{ slot.round }}</span>
+              </th>
+              @for (m of slot.cells; track $index) {
+                <td class="cell">
+                  @if (m) {
+                    <div class="match pool-c{{ m.colour }}" [class.dimmed]="m.dimmed" [attr.aria-label]="m.label">
+                      <span class="pool-chip">{{ m.pool }}</span>
+                      <div class="teams">
+                        <span class="team" [class.highlighted]="m.aIsHighlighted" [title]="m.teamA">{{ m.teamA }}</span>
+                        <span class="vs" aria-hidden="true">vs</span>
+                        <span class="team" [class.highlighted]="m.bIsHighlighted" [title]="m.teamB">{{ m.teamB }}</span>
+                      </div>
+                      @if (m.showRef) {
+                        <div class="ref" [class.ref-gap]="!m.ref">
+                          <span class="ref-label">Ref</span>
+                          @if (m.ref) {
+                            <span class="ref-name" [class.highlighted]="m.refIsHighlighted" [title]="m.ref">{{ m.ref }}</span>
+                          } @else {
+                            <span class="ref-name">Organizer to assign</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="open-court"><span class="sr-only">Open</span></div>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 } @else {
   <div class="empty">
