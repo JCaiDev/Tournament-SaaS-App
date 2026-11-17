@@ -38,6 +38,8 @@ model Lobby {
   price         Float
   skillLevel    SkillLevel
   startTime     DateTime
+  poolSets      Int           @default(1)
+  poolSetMode   SetMode       @default(PLAY_ALL)
   format        LobbyFormat   @default(PICKUP)
   organizer     User          @relation("OrganizedLobbies", fields: [organizerId], references: [id])
   pools         Pool[]
@@ -157,4 +159,9 @@ enum GenderFormat {
   MENS
   WOMENS
   COED
+}
+
+enum SetMode {
+  PLAY_ALL
+  BEST_OF
 }
