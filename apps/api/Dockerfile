@@ -28,4 +28,6 @@ RUN DIRECT_URL="postgresql://placeholder" npm run build --workspace=@my-app/api
 
 EXPOSE 3001
 
-CMD ["node", "apps/api/dist/server.js"]
+CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && node dist/server.js"]
+
+
