@@ -96,9 +96,25 @@ export const generateScheduleSchema = z.object({
     referees: z.boolean().default(false),
 });
 
+export const setPoolFormatSchema = z
+    .object({
+        poolSetMode: z.enum(['PLAY_ALL', 'BEST_OF']).default('PLAY_ALL'),
+        poolSets: z.int().min(1).max(5),
+    })
+    .refine(
+        (data) => {
+            if (data.poolSetMode === 'BEST_OF') {
+                return data.poolSets % 2 === 1;
+            }
+            return true;
+        },
+        { message: 'Best of needs an odd number of sets' },
+    );
+
 export type GenerateScheduleInput = z.infer<typeof generateScheduleSchema>;
 export type AddTeamInput = z.infer<typeof addTeamSchema>;
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
 export type TeamParamInput = z.infer<typeof teamParamSchema>;
 export type SetSeedsInput = z.infer<typeof setSeedsSchema>;
 export type SetPoolsInput = z.infer<typeof setPoolsSchema>;
+export type SetPoolFormatInput = z.infer<typeof setPoolFormatSchema>;
