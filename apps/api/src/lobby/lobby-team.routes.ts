@@ -9,6 +9,7 @@ import { lobbyIdParamSchema } from './lobby.schemas';
 import {
     addTeamSchema,
     generateScheduleSchema,
+    setPoolFormatSchema,
     setPoolsSchema,
     setSeedsSchema,
     teamParamSchema,
@@ -94,4 +95,12 @@ router.get(
     TeamController.listSchedule,
 );
 
+router.put(
+    '/:lobbyId/pool-format',
+    requireAuth,
+    requireRole(...ORGANIZER_ROLES),
+    validateParams(lobbyIdParamSchema),
+    validateBody(setPoolFormatSchema),
+    TeamController.setPoolPlayFormat,
+);
 export default router;

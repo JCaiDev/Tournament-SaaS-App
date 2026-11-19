@@ -1,6 +1,7 @@
 import {
     AddTeamInput,
     GenerateScheduleInput,
+    SetPoolFormatInput,
     SetPoolsInput,
     SetSeedsInput,
     UpdateTeamInput,
@@ -315,5 +316,24 @@ export const listScheduleService = async (lobbyId: string, actor: AuthUser) => {
     return await prisma.match.findMany({
         where: { lobbyId },
         orderBy: [{ startTime: 'asc' }, { court: 'asc' }],
+    });
+};
+
+export const setPoolFormatService = async (
+    lobbyId: string,
+    actor: AuthUser,
+    input: SetPoolFormatInput,
+) => {
+    const lobby = await assertLobbyManager(lobbyId, actor);
+    if (lobby.format !== LobbyFormat.TOURNAMENT)
+        throw new AppError(
+            'Pool-play format are only available for tournaments',
+            409,
+        );
+
+    return await prisma.lobby.update({
+        where: { id: lobbyId },
+        data: { poolSets: input.poolSets, poolSetMode: input.poolSetMode },
+        select: { poolSets: true, poolSetMode: true },
     });
 };
