@@ -1,0 +1,221 @@
+:host {
+  display: block;
+}
+
+/* ---- Heading (matches steps 1–3) ---- */
+
+.step-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-xs);
+}
+
+.step-head h4 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.save-status {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.save-error {
+  color: var(--color-destructive);
+}
+
+.text-btn {
+  background: none;
+  border: 0;
+  padding: 0.2rem 0.3rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.text-btn:hover {
+  text-decoration: underline;
+}
+
+.hint {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  margin: 0 0 var(--space-md);
+  max-width: 62ch;
+}
+
+/* ---- Card ---- */
+
+.format-card {
+  --control-h: 2.8125rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Phones: format on top, sets below. Tablets and up: side by side. */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+}
+
+@media (min-width: 641px) {
+  .controls {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.field-label {
+  display: block;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  line-height: 1.2;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+.mode {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+/* Two-option switch: [ Play all sets | Best of ] */
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  box-sizing: border-box;
+  height: var(--control-h);
+  padding: 0.2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+}
+
+.segment {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(var(--radius-sm) - 2px);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  user-select: none;
+}
+
+.segment:hover {
+  color: var(--color-foreground);
+}
+
+.segment.active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(15, 27, 42, 0.15);
+}
+
+/* The radio stays in the page for keyboards and screen readers; the label is
+   what you see and click. */
+.segment input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.segment:has(input:focus-visible) {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Sets: − [ 3 ] + */
+.stepper {
+  display: flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  height: var(--control-h);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.stepper-value {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.stepper-btn {
+  flex: none;
+  width: 2.75rem;
+  border: 0;
+  background: var(--color-background);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.stepper-btn:hover:not(:disabled) {
+  background: rgba(35, 87, 137, 0.12);
+}
+
+.stepper-btn:disabled {
+  color: var(--color-border);
+  cursor: not-allowed;
+}
+
+.stepper-btn:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: -2px;
+}
+
+/* Plain-language summary of the choice */
+.summary {
+  margin: var(--space-md) 0 0;
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  max-width: 62ch;
+}
+
+.summary strong {
+  color: var(--color-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment,
+  .stepper-btn {
+    transition: none;
+  }
+}

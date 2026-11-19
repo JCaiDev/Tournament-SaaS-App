@@ -11,6 +11,7 @@ import {
   SKILL_LABELS,
   UpdatePlayerRequest,
 } from '../../models/lobby';
+import { PoolFormat } from '../../models/team';
 import { AuthService } from '../../services/auth.service';
 import { generateTeams } from '../../shared/team-generator/team-generator';
 import { TournamentTeams } from './tournament-teams/tournament-teams';
@@ -68,6 +69,15 @@ export class LobbyDetail implements OnInit {
 
   // Tournaments show saved teams instead of the pickup roster and team maker.
   readonly isTournament = computed(() => this.lobby()?.format === 'TOURNAMENT');
+
+  // The saved pool-play format, or null when the API didn't send it (the
+  // format step then shows the database default, 1 set).
+  readonly poolFormat = computed<PoolFormat | null>(() => {
+    const l = this.lobby();
+    return l?.poolSets !== undefined && l.poolSetMode !== undefined
+      ? { poolSets: l.poolSets, poolSetMode: l.poolSetMode }
+      : null;
+  });
 
   // Roster cap (null = unlimited).
   readonly cap = computed(() => this.lobby()?.capacity ?? null);

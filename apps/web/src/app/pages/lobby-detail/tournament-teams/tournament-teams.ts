@@ -12,7 +12,7 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TeamService } from '../../../services/team.service';
-import { Team, UpdateTeamRequest } from '../../../models/team';
+import { PoolFormat, Team, UpdateTeamRequest } from '../../../models/team';
 import { TournamentPools } from '../tournament-pools/tournament-pools';
 
 // Same limits as the API's addTeamSchema / updateTeamSchema.
@@ -33,6 +33,7 @@ export class TournamentTeams implements OnInit {
   readonly canManage = input(false);
   readonly lobbyStart = input<string | null>(null);
   readonly lobbyEnd = input<string | null>(null);
+  readonly poolFormat = input<PoolFormat | null>(null);
 
   readonly teams = signal<Team[]>([]);
   readonly loading = signal(true);

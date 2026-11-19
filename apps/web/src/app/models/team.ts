@@ -103,3 +103,19 @@ export interface ScheduleResponse {
   message: string;
   schedule: Match[];
 }
+
+// How many sets a pool-play match has (the API's SetMode):
+// - PLAY_ALL: every set is played, so an even count can end in a tie (1–1).
+// - BEST_OF: the match ends once a team has a majority; odd counts only.
+export type SetMode = 'PLAY_ALL' | 'BEST_OF';
+
+// PUT /lobbies/:lobbyId/pool-format. Both fields are required (full replace).
+export interface PoolFormat {
+  poolSets: number; // 1–5; odd when BEST_OF
+  poolSetMode: SetMode;
+}
+
+export interface PoolFormatResponse {
+  message: string;
+  poolFormat: PoolFormat;
+}

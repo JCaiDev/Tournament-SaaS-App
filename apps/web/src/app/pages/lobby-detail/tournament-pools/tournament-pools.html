@@ -166,6 +166,11 @@
         [lobbyEnd]="lobbyEnd()"
       />
     </div>
+
+    <!-- Step 4: match format (score entry checks scores against it) -->
+    <div class="step">
+      <app-tournament-format [lobbyId]="lobbyId()" [saved]="poolFormat()" />
+    </div>
   }
 </section>
 

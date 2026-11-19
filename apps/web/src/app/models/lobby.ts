@@ -30,6 +30,10 @@ export interface Lobby {
   genderFormat: GenderFormat;
   allowToApply: boolean;
   format: LobbyFormat;
+  // Pool-play match format (tournaments). Optional: older API versions don't
+  // send them, and the page falls back to the database default (1 set).
+  poolSets?: number;
+  poolSetMode?: 'PLAY_ALL' | 'BEST_OF';
   // Max players on the active roster; null means no cap (unlimited).
   capacity: number | null;
   createdAt: string;

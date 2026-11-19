@@ -16,6 +16,8 @@ export const publicLobbySelect = {
     allowToApply: true,
     createdAt: true,
     format: true,
+    poolSets: true,
+    poolSetMode: true,
     organizer: { select: publicUserSelect },
 } satisfies Prisma.LobbySelect;
 

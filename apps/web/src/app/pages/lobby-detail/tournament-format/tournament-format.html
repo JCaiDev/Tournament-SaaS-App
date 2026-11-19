@@ -1,0 +1,48 @@
+<div class="step-head">
+  <h4>4. Match format</h4>
+  @if (status()) {
+    <span class="save-status" [class.save-error]="saver.status() === 'error'" role="status">
+      {{ status() }}
+      @if (saver.status() === 'error') {
+        <button type="button" class="text-btn" (click)="saver.flush()">Retry</button>
+      }
+    </span>
+  }
+</div>
+<p class="hint">How many sets each pool-play match has. Scores are checked against this when they’re entered.</p>
+
+<div class="format-card">
+  <div class="controls">
+    <fieldset class="mode">
+      <legend class="field-label">Format</legend>
+      <div class="segmented">
+        <label class="segment" [class.active]="format().poolSetMode === 'PLAY_ALL'">
+          <input type="radio" name="pool-set-mode" value="PLAY_ALL"
+            [checked]="format().poolSetMode === 'PLAY_ALL'" (change)="setMode('PLAY_ALL')" />
+          Play all sets
+        </label>
+        <label class="segment" [class.active]="format().poolSetMode === 'BEST_OF'">
+          <input type="radio" name="pool-set-mode" value="BEST_OF"
+            [checked]="format().poolSetMode === 'BEST_OF'" (change)="setMode('BEST_OF')" />
+          Best of
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="sets">
+      <span class="field-label" id="fmt-sets-label">Sets</span>
+      <div class="stepper" role="group" aria-labelledby="fmt-sets-label">
+        <button type="button" class="stepper-btn" (click)="step(-1)" [disabled]="!canDecrease()"
+          aria-label="Fewer sets">−</button>
+        <output class="stepper-value" aria-live="polite">{{ format().poolSets }}</output>
+        <button type="button" class="stepper-btn" (click)="step(1)" [disabled]="!canIncrease()"
+          aria-label="More sets">+</button>
+      </div>
+      <span class="field-hint">{{ choicesHint() }}</span>
+    </div>
+  </div>
+
+  <p class="summary">
+    <strong>{{ summary().title }}.</strong> {{ summary().detail }}
+  </p>
+</div>
