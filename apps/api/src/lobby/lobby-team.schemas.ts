@@ -98,7 +98,7 @@ export const generateScheduleSchema = z.object({
 
 export const setPoolFormatSchema = z
     .object({
-        poolSetMode: z.enum(['PLAY_ALL', 'BEST_OF']).default('PLAY_ALL'),
+        poolSetMode: z.enum(['PLAY_ALL', 'BEST_OF']),
         poolSets: z.int().min(1).max(5),
     })
     .refine(
