@@ -7,6 +7,8 @@ import {
   GenerateScheduleRequest,
   Match,
   Pool,
+  PoolFormat,
+  PoolFormatResponse,
   PoolListResponse,
   ScheduleResponse,
   SetPoolsRequest,
@@ -88,5 +90,16 @@ export class TeamService {
     return this.http
       .get<ScheduleResponse>(`${this.baseUrl}/${lobbyId}/schedule`)
       .pipe(map((res) => res.schedule));
+  }
+
+  /**
+   * PUT /lobbies/:lobbyId/pool-format — 200 with the saved format.
+   * 400 when best of has an even count (the API checks it too), 409 for a
+   * pickup lobby, 403 when the caller doesn't organize this lobby.
+   */
+  setPoolFormat(lobbyId: string, data: PoolFormat): Observable<PoolFormat> {
+    return this.http
+      .put<PoolFormatResponse>(`${this.baseUrl}/${lobbyId}/pool-format`, data)
+      .pipe(map((res) => res.poolFormat));
   }
 }

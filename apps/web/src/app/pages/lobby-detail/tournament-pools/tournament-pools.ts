@@ -6,10 +6,11 @@ import { map } from 'rxjs';
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TeamService } from '../../../services/team.service';
-import { PoolLayout, Team } from '../../../models/team';
+import { PoolFormat, PoolLayout, Team } from '../../../models/team';
 import { SerialSaver } from '../../../shared/autosave/serial-saver';
 import { poolName, snakePools } from '../../../shared/pool-generator/snake-pools';
 import { TournamentSchedule } from '../tournament-schedule/tournament-schedule';
+import { TournamentFormat } from '../tournament-format/tournament-format';
 
 const UNASSIGNED = -1;
 
@@ -35,7 +36,7 @@ interface Column extends PoolView {
 // tournament goes live (not built yet), so the parent only shows it to managers.
 @Component({
   selector: 'app-tournament-pools',
-  imports: [NgTemplateOutlet, CdkDropListGroup, CdkDropList, CdkDrag, TournamentSchedule],
+  imports: [NgTemplateOutlet, CdkDropListGroup, CdkDropList, CdkDrag, TournamentSchedule, TournamentFormat],
   templateUrl: './tournament-pools.html',
   styleUrl: './tournament-pools.css',
 })
@@ -49,6 +50,8 @@ export class TournamentPools implements OnInit, OnDestroy {
   // For the schedule step: the default first-match time and the "runs late" warning.
   readonly lobbyStart = input<string | null>(null);
   readonly lobbyEnd = input<string | null>(null);
+  // For the match format step: what's saved on the lobby (null = not sent).
+  readonly poolFormat = input<PoolFormat | null>(null);
 
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
