@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { lobbyIdSchema } from './lobby.schemas';
 
+const MAX_SETS = 5;
+
 export const addTeamSchema = z.object({
     name: z
         .string()
@@ -99,7 +101,7 @@ export const generateScheduleSchema = z.object({
 export const setPoolFormatSchema = z
     .object({
         poolSetMode: z.enum(['PLAY_ALL', 'BEST_OF']),
-        poolSets: z.int().min(1).max(5),
+        poolSets: z.int().min(1).max(MAX_SETS),
     })
     .refine(
         (data) => {
@@ -111,6 +113,15 @@ export const setPoolFormatSchema = z
         { message: 'Best of needs an odd number of sets' },
     );
 
+export const setScoreSchema = z.object({
+    teamAPoints: z.int().min(0).max(99),
+    teamBPoints: z.int().min(0).max(99),
+});
+
+export const setMatchSetsSchema = z.object({
+    sets: z.array(setScoreSchema).max(MAX_SETS),
+});
+
 export type GenerateScheduleInput = z.infer<typeof generateScheduleSchema>;
 export type AddTeamInput = z.infer<typeof addTeamSchema>;
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
@@ -118,3 +129,4 @@ export type TeamParamInput = z.infer<typeof teamParamSchema>;
 export type SetSeedsInput = z.infer<typeof setSeedsSchema>;
 export type SetPoolsInput = z.infer<typeof setPoolsSchema>;
 export type SetPoolFormatInput = z.infer<typeof setPoolFormatSchema>;
+export type SetMatchSetsInput = z.infer<typeof setMatchSetsSchema>;
