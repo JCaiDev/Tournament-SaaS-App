@@ -125,7 +125,7 @@ export const setMatchSetsSchema = z.object({
 export const matchIdSchema = z
     .string()
     .trim()
-    .pipe(z.uuid('Invalid team ID format'));
+    .pipe(z.uuid('Invalid match ID format'));
 
 export const matchParamSchema = z.object({
     lobbyId: lobbyIdSchema,
