@@ -1,6 +1,7 @@
 import {
     AddTeamInput,
     GenerateScheduleInput,
+    SetMatchSetsInput,
     SetPoolFormatInput,
     SetPoolsInput,
     SetSeedsInput,
@@ -335,5 +336,42 @@ export const setPoolFormatService = async (
         where: { id: lobbyId },
         data: { poolSets: input.poolSets, poolSetMode: input.poolSetMode },
         select: { poolSets: true, poolSetMode: true },
+    });
+};
+
+export const setMatchSetsService = async (
+    lobbyId: string,
+    matchId: string,
+    actor: AuthUser,
+    input: SetMatchSetsInput,
+) => {
+    const lobby = await assertLobbyManager(lobbyId, actor);
+    if (lobby.format !== LobbyFormat.TOURNAMENT)
+        throw new AppError(
+            'Pool-play scores are only available for tournaments',
+            409,
+        );
+    const match = await prisma.match.findFirst({
+        where: { id: matchId, lobbyId },
+    });
+    if (!match) throw new AppError('Match not found', 404);
+
+    const rows = input.sets.map((set, index) => ({
+        matchId: matchId,
+        setNumber: index + 1,
+        teamAPoints: set.teamAPoints,
+        teamBPoints: set.teamBPoints,
+    }));
+    await prisma.$transaction([
+        prisma.matchSet.deleteMany({
+            where: { matchId },
+        }),
+        prisma.matchSet.createMany({
+            data: rows,
+        }),
+    ]);
+    return await prisma.matchSet.findMany({
+        where: { matchId },
+        orderBy: { setNumber: 'asc' },
     });
 };
