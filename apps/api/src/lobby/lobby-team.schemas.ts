@@ -122,6 +122,16 @@ export const setMatchSetsSchema = z.object({
     sets: z.array(setScoreSchema).max(MAX_SETS),
 });
 
+export const matchIdSchema = z
+    .string()
+    .trim()
+    .pipe(z.uuid('Invalid team ID format'));
+
+export const matchParamSchema = z.object({
+    lobbyId: lobbyIdSchema,
+    matchId: matchIdSchema,
+});
+
 export type GenerateScheduleInput = z.infer<typeof generateScheduleSchema>;
 export type AddTeamInput = z.infer<typeof addTeamSchema>;
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
@@ -130,3 +140,4 @@ export type SetSeedsInput = z.infer<typeof setSeedsSchema>;
 export type SetPoolsInput = z.infer<typeof setPoolsSchema>;
 export type SetPoolFormatInput = z.infer<typeof setPoolFormatSchema>;
 export type SetMatchSetsInput = z.infer<typeof setMatchSetsSchema>;
+export type MatchParamInput = z.infer<typeof matchParamSchema>;
